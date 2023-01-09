@@ -17,4 +17,4 @@ WORKDIR /app
 
 USER app
 
-CMD [ "python main.py" ]
+CMD [ "/usr/local/bin/python /app/main.py" ]
