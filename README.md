@@ -1,2 +1,2 @@
 # sdg-indexer
-SDG Indexing
+SDG Indexing for the SDG Dashboard
