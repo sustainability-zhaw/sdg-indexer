@@ -1,6 +1,8 @@
 import settings
 import logging
 
+logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level=settings.LOG_LEVEL)
+
 def run():
     logger.debug("run service function")
     logger.debug(f"DB_HOST: {settings.DB_HOST}")
