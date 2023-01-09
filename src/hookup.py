@@ -10,4 +10,4 @@ def run():
     logger.debug(f"DB_HOST: {settings.DB_HOST}")
     logger.debug(f"Batch Size: {settings.BATCH_SIZE}")
     logger.debug(f"Batch Interval: {settings.BATCH_INTERVAL}")
-    logger.debug(f"Batch Interval: {settings.LOG_LEVEL}")
+    logger.debug(f"Log Level: {settings.LOG_LEVEL}")
