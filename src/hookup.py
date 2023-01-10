@@ -1,7 +1,7 @@
 import settings
 import logging
 
-logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level='DEBUG')
+# logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level='DEBUG')
 
 logger = logging.getLogger("sdgindexer")
 
