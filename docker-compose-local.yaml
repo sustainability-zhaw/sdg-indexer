@@ -4,6 +4,9 @@ services:
     build:
       context: ./
     restart: 'no'
+    depends_on:
+      db_init:
+        condition: service_completed_successfully 
     environment:
       DB_HOST: dgraph_standalone:8080
       BATCH_INTERVAL: 30
