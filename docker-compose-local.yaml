@@ -13,8 +13,7 @@ services:
       DB_HOST: db:8080
       BATCH_INTERVAL: 30
 
-
-   db:
+  db:
     # hostname: dgraph_standalone # Hardcoded in db_init entrypoint.sh
     image: dgraph/standalone:v22.0.2
     restart: 'no'
