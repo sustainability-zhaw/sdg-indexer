@@ -24,7 +24,7 @@ services:
       - '9080:9080'
 
   db_init:
-    image: ghcr.io/sustainability-zhaw/dgraph-schema:sha-0812f6f
+    image: ghcr.io/sustainability-zhaw/dgraph-schema:sha-520337d
     restart: 'no'
     networks:
       - dgraphnet
@@ -33,7 +33,7 @@ services:
       SAMPLE_DATA: plain_pubs
 
   db_keywords:
-    image: ghcr.io/sustainability-zhaw/keywords:sha-0c40ab7
+    image: ghcr.io/sustainability-zhaw/keywords:sha-419d264
     restart: 'no'
     networks:
       - dgraphnet
