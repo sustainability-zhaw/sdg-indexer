@@ -13,9 +13,14 @@ from gql.transport.requests import RequestsHTTPTransport
 import settings
 
 _client = Client(
-    transport=RequestsHTTPTransport(url=f"http://localhost:8080/graphql"),
+    transport=RequestsHTTPTransport(url=f"http://{settings.DB_HOST}/graphql"),
     fetch_schema_from_transport=True
 )
+
+# _client = Client(
+#     transport=RequestsHTTPTransport(url=f"http://localhost:8080/graphql"),
+#     fetch_schema_from_transport=True
+# )
 
 
 def query_keywords():

@@ -45,21 +45,23 @@ for keyword_item in db.query_keywords():
                         update_input = {
                             "update_input": {
                                 "filter": {
-                                    "link": {"eq": info_object['link']}},
-                                "set": {
-                                    "sdg_matches": {
-                                        "construct": construct,
-                                        "keyword": keyword,
-                                        "required_context": required_context,
-                                        "forbidden_context": forbidden_context,
-                                        "language": keyword_item['language']
+                                    "link": {
+                                        "eq": info_object['link']
                                     }
+                                },
+                                "set": {
+                                    "sdg_matches": [{
+                                        "construct": construct
+                                    }],
+                                    "sdgs": [{
+                                        "id": keyword_item['sdg']['id']
+                                    }]
                                 }
                             }
                         }
 
-                        if keyword_item['sdg']['id'] not in info_object['sdgs']:    # if sdg does not exist
-                            update_input['update_input']['set'].update({"sdgs": [{"id": keyword_item['sdg']['id']}]})
+                        # if keyword_item['sdg']['id'] not in info_object['sdgs']:    # if sdg does not exist
+                        #     update_input['update_input']['set'].update({"sdgs": [{"id": keyword_item['sdg']['id']}]})
 
                         update_time = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
                         update_input['update_input']['set'].update({"sdg_check": update_time})

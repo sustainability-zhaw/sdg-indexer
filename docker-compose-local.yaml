@@ -24,16 +24,17 @@ services:
       - '9080:9080'
 
   db_init:
-    image: ghcr.io/sustainability-zhaw/dgraph-schema:sha-520337d
+    image: ghcr.io/sustainability-zhaw/dgraph-schema:sha-5c0dbd9
     restart: 'no'
     networks:
       - dgraphnet
     environment:
       DGRAPH_SERVER: http://db:8080
       SAMPLE_DATA: plain_pubs
+      TIMEOUT: 20
 
   db_keywords:
-    image: ghcr.io/sustainability-zhaw/keywords:sha-3c3cd20
+    image: ghcr.io/sustainability-zhaw/keywords:sha-7dc5aca
     restart: 'no'
     networks:
       - dgraphnet

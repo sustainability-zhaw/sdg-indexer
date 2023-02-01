@@ -1,8 +1,5 @@
-import datetime
 import time
-
 import logging
-
 import settings
 import hookup
 
@@ -12,7 +9,10 @@ logger = logging.getLogger("sdgindexer-loop")
 
 while True:
     logger.info("start iteration")
-    hookup.run()
+    try:
+        hookup.run()
+    except:
+        logger.exception('Unhandled exception')
     # implicit timing
     logger.info("finish iteration") 
     time.sleep(settings.BATCH_INTERVAL)
