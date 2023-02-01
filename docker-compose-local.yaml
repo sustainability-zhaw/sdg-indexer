@@ -33,7 +33,7 @@ services:
       SAMPLE_DATA: plain_pubs
 
   db_keywords:
-    image: ghcr.io/sustainability-zhaw/keywords:sha-419d264
+    image: ghcr.io/sustainability-zhaw/keywords:sha-3c3cd20
     restart: 'no'
     networks:
       - dgraphnet
