@@ -32,52 +32,56 @@ def run():
             keyword_item = utils.process_sdg_match(keyword_item)
 
         construct = keyword_item['construct']
-        keywords = keyword_item['keyword'].split(",")
-        required_contexts = keyword_item['required_context'].split(",")
-        forbidden_contexts = keyword_item['forbidden_context'].split(",")
+        sdg_id = keyword_item['sdg']['id']
+
+        # keywords = keyword_item['keyword'] # .split(",")
+        # required_context = keyword_item['required_context'] # .split(",")
+        # forbidden_context = keyword_item['forbidden_context'] # .split(",")
 
         # assume keywords comma separated
         # print(keyword_item)
-        for keyword in keywords:
-            keyword = keyword.strip()  # remove commas from strings and treat comma separated as one phrase
+        # for keyword in keywords:
+        # keyword = keyword.strip()  # remove commas from strings and treat comma separated as one phrase
 
-            for required_context in required_contexts:
-                required_context = required_context.strip()  # remove commas from strings and treat comma separated as one phrase
+        #   #   for required_context in required_contexts:
+        # if len(required_context): 
+        #     required_context = required_context.strip()  # remove commas from strings and treat comma separated as one phrase
 
-                for forbidden_context in forbidden_contexts:
-                    forbidden_context = forbidden_context.strip()  # remove commas from strings and treat comma separated as one phrase
+        # if len(forbidden_context):
+        #     forbidden_context = forbidden_context.strip()  # remove commas from strings and treat comma separated as one phrase
 
                     # print(keyword, '\n', required_context, '\n', forbidden_context, '\n', sep='')
 
-                    info_objects = db.query_keyword_matching_info_object(keyword_item)
-                    if len(info_objects) > 0:
-                        # print(info_objects)
+        info_objects = db.query_keyword_matching_info_object(keyword_item)
+        if len(info_objects) > 0:
+            # print(info_objects)
+            update_time = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
 
-                        for info_object in info_objects:
-                            update_input = {
-                                "update_input": {
-                                    "filter": {
-                                        "link": {
-                                            "eq": info_object['link']
-                                        }
-                                    },
-                                    "set": {
-                                        "sdg_matches": [{
-                                            "construct": construct
-                                        }],
-                                        "sdgs": [{
-                                            "id": keyword_item['sdg']['id']
-                                        }]
-                                    }
-                                }
+            for info_object in info_objects:
+                update_input = {
+                    "update_input": {
+                        "filter": {
+                            "link": {
+                                "eq": info_object['link']
                             }
+                        },
+                        "set": {
+                            "sdg_matches": [{
+                                "construct": construct
+                            }],
+                            "sdgs": [{
+                                "id": sdg_id
+                            }],
+                            "sdg_check": update_time
+                        }
+                    }
+                }
 
-                            # if keyword_item['sdg']['id'] not in info_object['sdgs']:    # if sdg does not exist
-                            #     update_input['update_input']['set'].update({"sdgs": [{"id": keyword_item['sdg']['id']}]})
+                # if keyword_item['sdg']['id'] not in info_object['sdgs']:    # if sdg does not exist
+                #     update_input['update_input']['set'].update({"sdgs": [{"id": keyword_item['sdg']['id']}]})
 
-                            update_time = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
-                            update_input['update_input']['set'].update({"sdg_check": update_time})
+                # update_input['update_input']['set'].update({"sdg_check": update_time})
 
-                            logger.debug(f"Updating person: {update_input}")
-                            db.update_info_object(update_input)
-                            # print(keyword_item)
+                logger.debug(f"Updating person: {update_input}")
+                db.update_info_object(update_input)
+                # print(keyword_item)

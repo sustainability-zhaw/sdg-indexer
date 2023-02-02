@@ -9,7 +9,7 @@ Copyright © 2023, Predictive Analytics Group, ICLS, ZHAW. All rights reserved.
 """
 # import modules
 import pandas as pd
-
+import re
 
 def check_us_and_uk_spelling(item, us_uk_file='https://raw.githubusercontent.com/sustainability-zhaw/keywords/main/data/UK_vs_US.csv'):
     """
@@ -39,7 +39,10 @@ def process_sdg_match(sdg_match_record):
     for field in sdg_match_record.keys():
         if field in ['keyword', 'required_context', 'forbidden_context']:
 
-            phrases = sdg_match_record[field].split(",")  # process comma separated phrases
+            if sdg_match_record[field] is None: 
+                continue
+
+            phrases = re.split("[^\w\d]+", sdg_match_record[field])  # process comma separated phrases
             final_phrases = []
 
             for phrase in phrases:
@@ -62,5 +65,5 @@ def process_sdg_match(sdg_match_record):
                     final_phrases.append(phrase)
                     final_phrases.append(counterparts)
 
-            sdg_match_record_updated[field] = ', '.join(final_phrases)
+            sdg_match_record_updated[field] = ' '.join(final_phrases)
     return sdg_match_record_updated

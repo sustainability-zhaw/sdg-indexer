@@ -75,28 +75,38 @@ def query_keyword_matching_info_object(keyword):
 
     filter_template = {"filter":
         {"and": [
-            {"language": {"eq": keyword['language']}},
-            {"or": [
-                {"and": []},
-                {"and": []},
-                {"and": []}
-            ]}
+            {"language": {"eq": keyword['language']}}
         ]}}
 
-    if (keyword['keyword'] is not None) or (keyword['keyword'] != ''):
-        for ind, field in enumerate(fields):
-            filter_template['filter']['and'][1]['or'][ind]['and'].append(
-                {field: {"alloftext": keyword['keyword']}})
+    if (keyword['keyword'] is not None) and (keyword['keyword'] != ''):
+        filter_template['filter']['and'].append(
+            { 'or': [
+                {'title': {'alloftext': keyword['keyword']}},
+                {'abstract': {'alloftext': keyword['keyword']}},
+                {'extras': {'alloftext': keyword['keyword']}}
+                ]
+            }
+        )
+        
+    if (keyword['required_context'] is not None) and (keyword['required_context'] != ''):
+        filter_template['filter']['and'].append(
+            { 'or': [
+                {'title': {'alloftext': keyword['required_context']}},
+                {'abstract': {'alloftext': keyword['required_context']}},
+                {'extras': {'alloftext': keyword['required_context']}}
+                ]
+            }
+        )
 
-    if (keyword['required_context'] is not None) or (keyword['required_context'] != ''):
-        for ind, field in enumerate(fields):
-            filter_template['filter']['and'][1]['or'][ind]['and'].append(
-                {field: {"alloftext": keyword['required_context']}})
-
-    if (keyword['forbidden_context'] is not None) or (keyword['forbidden_context'] != ''):
-        for ind, field in enumerate(fields):
-            filter_template['filter']['and'][1]['or'][ind]['and'].append(
-                {"not": {field: {"alloftext": keyword['forbidden_context']}}})
+    if (keyword['forbidden_context'] is not None) and (keyword['forbidden_context'] != ''):
+        filter_template['filter']['and'].append(
+            { 'not': { 'or': [
+                {'title': {'alloftext': keyword['forbidden_context']}},
+                {'abstract': {'alloftext': keyword['forbidden_context']}},
+                {'extras': {'alloftext': keyword['forbidden_context']}}
+                ]
+            } }
+        )
 
     return _client.execute(
         gql(
