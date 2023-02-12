@@ -35,11 +35,9 @@ def query_keywords():
                     required_context
                     forbidden_context
                     language
-                    sdg{ 
+                    sdg { 
                         id 
                     }
-
-
                 }
             }
             """
@@ -57,11 +55,9 @@ def query_unchecked_keywords():
                     required_context
                     forbidden_context
                     language
-                    sdg{ 
+                    sdg { 
                         id 
                     }
-
-
                 }
             }
             """
