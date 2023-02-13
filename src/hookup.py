@@ -51,7 +51,7 @@ def handleKeywordItem(keyword_item):
             }
         }
 
-        logger.debug(f"Updating info object: {update_input}")
+        logger.debug(f"Updating info objects to SDG {sdg_id}: {update_input}")
         db.update_info_object(update_input)
 
 def run(next):
