@@ -54,14 +54,17 @@ def handleKeywordItem(keyword_item):
         logger.debug(f"Updating info objects to SDG {sdg_id}: {update_input}")
         db.update_info_object(update_input)
 
-def run(next):
+def run(next, use_empty):
     logger.debug("run service function")
     logger.debug(f"DB_HOST: {settings.DB_HOST}")
     logger.debug(f"Batch Size: {settings.BATCH_SIZE}")
     logger.debug(f"Batch Interval: {settings.BATCH_INTERVAL}")
     logger.debug(f"Log Level: {settings.LOG_LEVEL}")
 
-    keyword_chunk =  db.query_keywords(settings.BATCH_SIZE, next)
+    if use_empty == 1: 
+        keyword_chunk =  db.query_empty_keywords(settings.BATCH_SIZE, next)
+    else: 
+        keyword_chunk =  db.query_keywords(settings.BATCH_SIZE, next)
 
     for keyword_item in keyword_chunk:
         handleKeywordItem(keyword_item)

@@ -47,6 +47,31 @@ def query_keywords(size, offset):
             "first": size
         })['querySdgMatch']
 
+def query_empty_keywords(size, offset):
+    return _client.execute(
+        gql(
+            """
+            query($offset: Int, $first: Int) {
+                querySdgMatch(filter: {not: {has: objects}}, first: $first, offset: $offset)
+                {
+                    construct
+                    keyword
+                    required_context
+                    forbidden_context
+                    language
+                    sdg { 
+                        id 
+                    }
+                }
+            }
+            """
+        ),
+        variable_values = {
+            "offset": offset,
+            "first": size
+        })['querySdgMatch']
+
+
 
 def query_unchecked_keywords():
     return _client.execute(
