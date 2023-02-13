@@ -7,10 +7,12 @@ logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", 
 
 logger = logging.getLogger("sdgindexer-loop")
 
+next = 0
+
 while True:
     logger.info("start iteration")
     try:
-        hookup.run()
+        next = hookup.run(next)
     except:
         logger.exception('Unhandled exception')
     # implicit timing

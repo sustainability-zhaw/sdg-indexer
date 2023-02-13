@@ -23,12 +23,12 @@ _client = Client(
 # )
 
 
-def query_keywords():
+def query_keywords(offset):
     return _client.execute(
         gql(
             """
-            query{
-                querySdgMatch
+            query($offset: Int) {
+                querySdgMatch(first: 100, offset: $offset)
                 {
                     construct
                     keyword
@@ -40,7 +40,10 @@ def query_keywords():
                     }
                 }
             }
-            """
+            """,
+            variable_values = {
+                "offset": offset
+            }
         ))['querySdgMatch']
 
 
@@ -111,25 +114,9 @@ def query_keyword_matching_info_object(keyword):
                     queryInfoObject(filter: $filter){
                         title
                         abstract
+                        extras
                         language
                         link
-                        keywords{
-                            name
-                            }
-                        sdgs{
-                            id
-                            }
-                        sdg_check
-                        sdg_matches{
-                            construct
-                            keyword
-                            required_context
-                            forbidden_context
-                            language
-                            sdg{
-                                id
-                            }
-                            }
                     }
                 }
                 """
