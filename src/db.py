@@ -40,11 +40,11 @@ def query_keywords(offset):
                     }
                 }
             }
-            """,
-            variable_values = {
-                "offset": offset
-            }
-        ))['querySdgMatch']
+            """
+        ),
+        variable_values = {
+            "offset": offset
+        })['querySdgMatch']
 
 
 def query_unchecked_keywords():
@@ -63,9 +63,9 @@ def query_unchecked_keywords():
                     }
                 }
             }
-            """
-        ),
-        variable_values={"batchSize": settings.BATCH_SIZE}
+            """,
+            variable_values={"batchSize": settings.BATCH_SIZE}
+        )
     )['querySdgMatch']
 
 

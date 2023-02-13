@@ -16,6 +16,7 @@ def checkNLPMatch(infoObject, keyword_item):
     return True
     
 def handleKeywordItem(keyword_item):
+    logger.debug("handle one keyword item ")
     if keyword_item['language'] == 'en':
         keyword_item = utils.process_sdg_match(keyword_item)
 
