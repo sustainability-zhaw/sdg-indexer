@@ -27,7 +27,7 @@ def query_keywords(size, offset):
     return _client.execute(
         gql(
             """
-            query($offset: Int) {
+            query($offset: Int, $first: Int) {
                 querySdgMatch(first: $first, offset: $offset)
                 {
                     construct
