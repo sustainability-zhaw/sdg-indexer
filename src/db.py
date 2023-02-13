@@ -23,12 +23,12 @@ _client = Client(
 # )
 
 
-def query_keywords(offset):
+def query_keywords(size, offset):
     return _client.execute(
         gql(
             """
             query($offset: Int) {
-                querySdgMatch(first: 100, offset: $offset)
+                querySdgMatch(first: $first, offset: $offset)
                 {
                     construct
                     keyword
@@ -43,7 +43,8 @@ def query_keywords(offset):
             """
         ),
         variable_values = {
-            "offset": offset
+            "offset": offset,
+            "first": size
         })['querySdgMatch']
 
 

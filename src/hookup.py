@@ -61,7 +61,7 @@ def run(next):
     logger.debug(f"Batch Interval: {settings.BATCH_INTERVAL}")
     logger.debug(f"Log Level: {settings.LOG_LEVEL}")
 
-    keyword_chunk =  db.query_keywords(next)
+    keyword_chunk =  db.query_keywords(settings.BATCH_SIZE, next)
 
     for keyword_item in keyword_chunk:
         handleKeywordItem(keyword_item)
