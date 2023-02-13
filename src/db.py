@@ -130,24 +130,11 @@ def update_info_object(update_input):
     _client.execute(
         gql(
             """
-            mutation updateInfoObject($update_input: UpdateInfoObjectInput!){
+            mutation updateInfoObject($update_input: UpdateInfoObjectInput!) {
                 updateInfoObject(input: $update_input) {
                     infoObject {
-                        link 
-                        sdgs{
-                        id
-                        }
-                        sdg_matches{
-                            construct
-                            keyword
-                            required_context
-                            forbidden_context
-                            language
-                            sdg{
-                                id
-                            }
-                            }
-                        }
+                        link     
+                    }
                 }
             }
             """
