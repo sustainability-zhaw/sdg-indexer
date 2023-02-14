@@ -15,7 +15,7 @@ def query_keywords(size, offset):
         gql(
             """
             query($offset: Int, $first: Int) {
-                querySdgMatch(filter: {has: objects}, first: $first, offset: $offset)
+                querySdgMatch(filter: {and: [{has: objects}, {has: sdg}]}, first: $first, offset: $offset)
                 {
                     construct
                     keyword
@@ -39,7 +39,7 @@ def query_empty_keywords(size, offset):
         gql(
             """
             query($offset: Int, $first: Int) {
-                querySdgMatch(filter: {not: {has: objects}}, first: $first, offset: $offset)
+                querySdgMatch(filter: {and: [{not: {has: objects}}, {has: sdg}]}, first: $first, offset: $offset)
                 {
                     construct
                     keyword
