@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-=====================================
-Created on Wed Feb 01 2023 11:16
-@author: Martin Rerabek, martin.rerabek@zhaw.ch
-Copyright © 2023, Predictive Analytics Group, ICLS, ZHAW. All rights reserved.
-=====================================
 
-"""
 # import modules
 import pandas as pd
 import re

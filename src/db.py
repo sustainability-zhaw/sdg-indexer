@@ -1,12 +1,5 @@
 # -*- coding: utf-8 -*-
-"""
-=====================================
-Created on Thu Jan 26 2023 09:55
-@author: Martin Rerabek, martin.rerabek@zhaw.ch
-Copyright © 2023, Predictive Analytics Group, ICLS, ZHAW. All rights reserved.
-=====================================
 
-"""
 # import modules
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
@@ -17,18 +10,12 @@ _client = Client(
     fetch_schema_from_transport=True
 )
 
-# _client = Client(
-#     transport=RequestsHTTPTransport(url=f"http://localhost:8080/graphql"),
-#     fetch_schema_from_transport=True
-# )
-
-
 def query_keywords(size, offset):
     return _client.execute(
         gql(
             """
             query($offset: Int, $first: Int) {
-                querySdgMatch(first: $first, offset: $offset)
+                querySdgMatch(filter: {has: objects}, first: $first, offset: $offset)
                 {
                     construct
                     keyword
@@ -68,32 +55,8 @@ def query_empty_keywords(size, offset):
         ),
         variable_values = {
             "offset": offset,
-            "first": size
+            "first": 2*size
         })['querySdgMatch']
-
-
-
-def query_unchecked_keywords():
-    return _client.execute(
-        gql(
-            """
-            query($batchSize:Int){
-                querySdgMatch(filter: { keyword_check: { eq: null } }, first:$batchSize) {
-                    construct
-                    keyword
-                    required_context
-                    forbidden_context
-                    language
-                    sdg { 
-                        id 
-                    }
-                }
-            }
-            """,
-            variable_values={"batchSize": settings.BATCH_SIZE}
-        )
-    )['querySdgMatch']
-
 
 def query_keyword_matching_info_object(keyword):
     fields = ["title", "abstract", "extras"]

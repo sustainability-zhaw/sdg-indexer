@@ -7,16 +7,38 @@ import logging
 import db
 import utils
 
-# logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level='DEBUG')
-
 logger = logging.getLogger("sdgindexer")
 
 def checkNLPMatch(infoObject, keyword_item):
+    """
+    runs the position exact keyword matching using NLP normalisation. 
+    :param infoObject: an information object to check
+    :param item: a keyword to match
+    :return: boolean: True if the keyword matches for the information object, False otherwise.
+
+    The database query returns a fuzzy matching, which is a super set of the 
+    actual index terms. This function reduces this super set by narrowing the 
+    results to include only the terms in sequence. For this purpose, the tokens
+    need to be normalised to their word-stem and then the word stems must appear
+    in the order that is given in the keyword_item.
+
+    If the query term is quoted no normalisation MUST take place, but the term 
+    must exist AS IS.
+    """
+
     # TODO: Implement token normalisation and then token based order verification
     return True
     
 def handleKeywordItem(keyword_item):
-    logger.debug("handle one keyword item ")
+    """
+    handles one key word item. 
+    :param item: a keyword item structure
+    :return: counterpart
+
+    This function 
+    """
+
+    logger.debug(f"handle one keyword item {keyword_item['construct']}")
     if keyword_item['language'] == 'en':
         keyword_item = utils.process_sdg_match(keyword_item)
 
@@ -55,6 +77,13 @@ def handleKeywordItem(keyword_item):
         db.update_info_object(update_input)
 
 def run(next, use_empty):
+    """
+    runs the next iteration of indexing loop
+    :param next: from where to start the next round
+    :param use_empty: 
+    :return: iterator for the next round
+    """
+
     logger.debug("run service function")
     logger.debug(f"DB_HOST: {settings.DB_HOST}")
     logger.debug(f"Batch Size: {settings.BATCH_SIZE}")
