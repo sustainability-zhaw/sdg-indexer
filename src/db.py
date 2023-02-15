@@ -10,12 +10,12 @@ _client = Client(
     fetch_schema_from_transport=True
 )
 
-def query_keywords(size, offset):
+def query_keywords(size, offset, limit):
     return _client.execute(
         gql(
             """
-            query($offset: Int, $first: Int) {
-                querySdgMatch(filter: {and: [{has: objects}, {has: sdg}]}, first: $first, offset: $offset)
+            query($offset: Int, $first: Int, $limitdate: DateTime) {
+                querySdgMatch(filter: {and: [{has: objects}, {has: sdg}, {dateUpdate: {gt: $limitdate}}]}, first: $first, offset: $offset)
                 {
                     construct
                     keyword
@@ -31,15 +31,16 @@ def query_keywords(size, offset):
         ),
         variable_values = {
             "offset": offset,
-            "first": size
+            "first": size,
+            "limitdate": limit.isoformat()
         })['querySdgMatch']
 
-def query_empty_keywords(size, offset):
+def query_empty_keywords(size, offset, limit):
     return _client.execute(
         gql(
             """
-            query($offset: Int, $first: Int) {
-                querySdgMatch(filter: {and: [{not: {has: objects}}, {has: sdg}]}, first: $first, offset: $offset)
+            query($offset: Int, $first: Int, $limitdate: DateTime) {
+                querySdgMatch(filter: {and: [{not: {has: objects}}, {has: sdg}, {dateUpdate: {gt: $limitdate}}]}, first: $first, offset: $offset)
                 {
                     construct
                     keyword
@@ -55,7 +56,8 @@ def query_empty_keywords(size, offset):
         ),
         variable_values = {
             "offset": offset,
-            "first": 2*size
+            "first": 2*size,
+            "limitdate": limit.isoformat()
         })['querySdgMatch']
 
 def query_keyword_matching_info_object(keyword):
