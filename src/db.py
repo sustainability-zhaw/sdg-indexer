@@ -1,9 +1,15 @@
 # -*- coding: utf-8 -*-
 
 # import modules
+import logging
+
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
 import settings
+
+# helper 
+from gql.transport.requests import log as requests_logger
+requests_logger.setLevel(logging.WARNING)
 
 _client = Client(
     transport = RequestsHTTPTransport(url=f"http://{settings.DB_HOST}/graphql"),
@@ -15,7 +21,7 @@ def query_sdg_keywords(sdg):
         gql(
             """
             query($sdg: String) {
-                querySdgMatch(filter: {has: sdg}) @cascade
+                querySdgMatch @cascade(fields: ["sdg", "language", "construct"])
                 {
                     construct
                     keyword
@@ -38,14 +44,14 @@ def query_keyword_term(construct):
         gql(
             """
             query($sdg: String) {
-                querySdgMatch(filter: {construct: {eq: $construct}}) @cascade 
+                querySdgMatch(filter: {construct: {eq: $construct}}) @cascade(fields: ["sdg", "language", "construct"])
                 {
                     construct
                     keyword
                     required_context
                     forbidden_context
                     language
-                    sdg(filter: {id: { eq: $construct }}) { 
+                    sdg { 
                         id 
                     }
                 }
