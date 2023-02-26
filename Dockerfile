@@ -6,7 +6,8 @@ ENV LOG_LEVEL=DEBUG
 
 COPY requirements.txt /requirements.txt
 
-RUN pip install -r requirements.txt && \
+RUN mkdir -p /app && \
+    pip install -r requirements.txt && \
     rm requirements.txt && \
     groupadd -r app && \
     useradd --no-log-init -r -g app app && \
