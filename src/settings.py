@@ -8,7 +8,7 @@ _settings = {
     "LOG_LEVEL": os.getenv('LOG_LEVEL', ' DEBUG'),
     "MQ_HOST": "mq",
     "MQ_EXCHANGE": "zhaw-km",
-    "MQ_BINDKEYS": ["indexer.*", "importer.object"]
+    "MQ_BINDKEYS": ["indexer.*", "importer.object", "importer.oai", "importer.evento", "importer.projects"]
 }
 
 if os.path.exists('/etc/app/config.json'):

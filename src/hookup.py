@@ -56,7 +56,7 @@ def handleKeywordItem(keyword_item):
             links.append(info_object['link'])
         
     update_input = ""
-    
+
     if len(links) > 0: 
         update_input = {
             "update_input": {
@@ -96,7 +96,6 @@ def indexObjects(body):
     Function to handle reindexing of one or more objects
     """
 
-    
 def indexTerm(body):
     """
     Function to handle reindexing term that were added via the UI
@@ -105,11 +104,13 @@ def indexTerm(body):
     for keyword_item in keyword_chunk:
         handleKeywordItem(keyword_item)
 
-
 mqRoutingFunctions = {
     "indexer.add": indexTerm,
     "indexer.update": indexTopic,
-    "importer.object": indexObjects
+    "importer.object": indexObjects,
+    "importer.evento": indexObjects,
+    "importer.oai": indexObjects,
+    "importer.projects": indexObjects
 }
 
 def handler(ch, method, properties, body):
