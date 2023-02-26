@@ -6,6 +6,7 @@ import settings
 import logging
 import db
 import utils
+import json
 
 logger = logging.getLogger("sdgindexer")
 
@@ -54,6 +55,8 @@ def handleKeywordItem(keyword_item):
         if checkNLPMatch(info_object, keyword_item): 
             links.append(info_object['link'])
         
+    update_input = ""
+    
     if len(links) > 0: 
         update_input = {
             "update_input": {
@@ -76,29 +79,45 @@ def handleKeywordItem(keyword_item):
         logger.debug(f"Updating info objects to SDG {sdg_id}: {update_input}")
         db.update_info_object(update_input)
 
-def run(next, use_empty, limitTime):
+
+def indexTopic(body):
     """
-    runs the next iteration of indexing loop
-    :param next: from where to start the next round
-    :param use_empty: 
-    :return: iterator for the next round
-    """
+    Function to handle reindexing of a given topic (e.g., via an updated SDG keyword file).
+    """ 
+    logger.debug(f"got body: {body}")
 
-    logger.debug("run service function")
-    logger.debug(f"DB_HOST: {settings.DB_HOST}")
-    logger.debug(f"Batch Size: {settings.BATCH_SIZE}")
-    logger.debug(f"Batch Interval: {settings.BATCH_INTERVAL}")
-    logger.debug(f"Log Level: {settings.LOG_LEVEL}")
-
-    if use_empty == 1:
-        keyword_chunk =  db.query_empty_keywords(settings.BATCH_SIZE, next, limitTime)
-    else: 
-        keyword_chunk =  db.query_keywords(settings.BATCH_SIZE, next, limitTime)
-
+    keyword_chunk =  db.query_sdg_keywords(body[0]['sdg'])
     for keyword_item in keyword_chunk:
         handleKeywordItem(keyword_item)
 
-    if len(keyword_chunk) > 0:
-        return next + len(keyword_chunk)
 
-    return 0
+def indexObjects(body):
+    """
+    Function to handle reindexing of one or more objects
+    """
+
+    
+def indexTerm(body):
+    """
+    Function to handle reindexing term that were added via the UI
+    """
+    keyword_chunk =  db.query_keyword_term(body['term'])
+    for keyword_item in keyword_chunk:
+        handleKeywordItem(keyword_item)
+
+
+mqRoutingFunctions = {
+    "indexer.add": indexTerm,
+    "indexer.update": indexTopic,
+    "importer.object": indexObjects
+}
+
+def handler(ch, method, properties, body):
+    mqKey = method.routing_key
+    mqPayload = json.loads(body)
+    
+    logger.info(f"changed indices for {mqKey}: {body}")
+    
+    mqRoutingFunctions[mqKey](mqPayload)
+
+    logger.info(f"updated indices for {mqKey}: {body}")

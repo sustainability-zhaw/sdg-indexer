@@ -10,19 +10,19 @@ _client = Client(
     fetch_schema_from_transport=True
 )
 
-def query_keywords(size, offset, limit):
+def query_sdg_keywords(sdg): 
     return _client.execute(
         gql(
             """
-            query($offset: Int, $first: Int, $limitdate: DateTime) {
-                querySdgMatch(filter: {and: [{has: objects}, {has: sdg}, {dateUpdate: {gt: $limitdate}}]}, first: $first, offset: $offset)
+            query($sdg: String) {
+                querySdgMatch(filter: {has: sdg}) @cascade
                 {
                     construct
                     keyword
                     required_context
                     forbidden_context
                     language
-                    sdg { 
+                    sdg(filter: {id: { eq: $sdg }}) { 
                         id 
                     }
                 }
@@ -30,34 +30,30 @@ def query_keywords(size, offset, limit):
             """
         ),
         variable_values = {
-            "offset": offset,
-            "first": size,
-            "limitdate": limit.isoformat()
+            "sdg": sdg
         })['querySdgMatch']
 
-def query_empty_keywords(size, offset, limit):
+def query_keyword_term(construct): 
     return _client.execute(
         gql(
             """
-            query($offset: Int, $first: Int, $limitdate: DateTime) {
-                querySdgMatch(filter: {and: [{not: {has: objects}}, {has: sdg}, {dateUpdate: {gt: $limitdate}}]}, first: $first, offset: $offset)
+            query($sdg: String) {
+                querySdgMatch(filter: {construct: {eq: $construct}}) @cascade 
                 {
                     construct
                     keyword
                     required_context
                     forbidden_context
                     language
-                    sdg { 
+                    sdg(filter: {id: { eq: $construct }}) { 
                         id 
                     }
                 }
             }
-            """
+            """ 
         ),
         variable_values = {
-            "offset": offset,
-            "first": 2*size,
-            "limitdate": limit.isoformat()
+            "construct": construct
         })['querySdgMatch']
 
 def query_keyword_matching_info_object(keyword):
@@ -117,18 +113,19 @@ def query_keyword_matching_info_object(keyword):
 
 
 def update_info_object(update_input):
-    # insert sdg based on link
-    _client.execute(
-        gql(
-            """
-            mutation updateInfoObject($update_input: UpdateInfoObjectInput!) {
-                updateInfoObject(input: $update_input) {
-                    infoObject {
-                        link     
+    if len(update_input) > 0:
+        # insert sdg based on link
+        _client.execute(
+            gql(
+                """
+                mutation updateInfoObject($update_input: UpdateInfoObjectInput!) {
+                    updateInfoObject(input: $update_input) {
+                        infoObject {
+                            link     
+                        }
                     }
                 }
-            }
-            """
-        ),
-        variable_values=update_input
-    )
+                """
+            ),
+            variable_values=update_input
+        )

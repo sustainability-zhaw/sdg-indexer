@@ -5,7 +5,10 @@ _settings = {
     "DB_HOST": os.getenv('DB_HOST'),
     "BATCH_SIZE": int(os.getenv('BATCH_SIZE', 100)),
     "BATCH_INTERVAL": int(os.getenv('BATCH_INTERVAL', 180)),
-    "LOG_LEVEL": os.getenv('LOG_LEVEL', ' DEBUG')
+    "LOG_LEVEL": os.getenv('LOG_LEVEL', ' DEBUG'),
+    "MQ_HOST": "mq",
+    "MQ_EXCHANGE": "zhaw-km",
+    "MQ_BINDKEYS": ["indexer.*", "importer.object"]
 }
 
 if os.path.exists('/etc/app/config.json'):
@@ -20,3 +23,6 @@ DB_HOST = _settings['DB_HOST']
 BATCH_SIZE = _settings['BATCH_SIZE']
 BATCH_INTERVAL = _settings['BATCH_INTERVAL']
 LOG_LEVEL = _settings['LOG_LEVEL']
+MQ_HOST = _settings['MQ_HOST']
+MQ_EXCHANGE = _settings['MQ_EXCHANGE']
+MQ_BINDKEYS = _settings['MQ_BINDKEYS']
