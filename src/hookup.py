@@ -120,5 +120,7 @@ def handler(ch, method, properties, body):
     logger.info(f"changed indices for {mqKey}: {body}")
     
     mqRoutingFunctions[mqKey](mqPayload)
-
+    
+    ch.basic_ack(method.delivery_tag)
     logger.info(f"updated indices for {mqKey}: {body}")
+    
