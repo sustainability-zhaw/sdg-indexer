@@ -1,42 +1,62 @@
-import time
+# import time
+# from datetime import datetime
+
 import logging
+import json
+import pika
+
 import settings
 import hookup
 
-from datetime import datetime
+def consume_handler(ch, method, properties, body):
+    """
+    Callback for the message queue. 
 
-logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level=settings.LOG_LEVEL)
+    This function handles the synchroneous message handling and informs the MQ once a 
+    message has been successfully handled. 
+    """
+    hookup.run(method.routing_key, json.loads(body))
+    ch.basic_ack(method.delivery_tag)
 
-logger = logging.getLogger("sdgindexer-loop")
+def main():
+    logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level=settings.LOG_LEVEL)
 
-next = 0
-useemtpy = 1
+    logger = logging.getLogger("sdgindexer-loop")
 
-# next chunk determines whether a full index rebuild or only keyword updates should be considered. 
-nextChunk = datetime.fromtimestamp(0)
-chunkTime = nextChunk
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(host=settings.MQ_HOST,
+                                  heartbeat=settings.MQ_HEARTBEAT,
+                                  blocked_connection_timeout=settings.MQ_TIMEOUT))
 
-while True:
-    logger.info("start iteration")
+    channel = connection.channel()
 
-    if next == 0 and useemtpy == 1: 
-        nextChunk = datetime.now()
+    channel.exchange_declare(exchange=settings.MQ_EXCHANGE, exchange_type='topic')
 
-        # twice a day we run a full index rebuild, to include new publications
-        # FIXME replace this logic with an update indexer that uses the recent objects smartly
-        if nextChunk.hour < 2 or nextChunk.hour == 12:
-            nextChunk = datetime.fromtimestamp(0)
+    result = channel.queue_declare(settings.MQ_QUEUE, exclusive=False)
+
+    queue_name = result.method.queue
+   
+    for binding_key in settings.MQ_BINDKEYS:
+        channel.queue_bind(
+            exchange=settings.MQ_EXCHANGE, 
+            queue=queue_name, 
+            routing_key=binding_key)
+
+    # switch message round-robin assignment to ready processes first
+    # Force service to handle one message at the time!
+    channel.basic_qos(prefetch_count=1) 
+
+    # register consuming function as callback
+    channel.basic_consume(
+        queue=queue_name, 
+        on_message_callback=consume_handler)
 
     try:
-        next = hookup.run(next, useemtpy, chunkTime)
-    except:
-        logger.exception('Unhandled exception')
-    
-    if next == 0: 
-        useemtpy = -1 * useemtpy + 1
-        if useemtpy == 1:
-            chunkTime = nextChunk
+        channel.start_consuming()
+    except KeyboardInterrupt:
+        channel.stop_consuming()
 
-    # implicit timing    
-    logger.info("finish iteration") 
-    time.sleep(settings.BATCH_INTERVAL)
+    connection.close()
+
+if __name__ == "__main__":
+    main()

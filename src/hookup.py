@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# import modules
-
-import settings
 import logging
 import db
 import utils
@@ -29,37 +26,42 @@ def checkNLPMatch(infoObject, keyword_item):
     # TODO: Implement token normalisation and then token based order verification
     return True
     
-def handleKeywordItem(keyword_item):
+def handleKeywordItem(keyword_item, links = []):
     """
     handles one key word item. 
-    :param item: a keyword item structure
-    :return: counterpart
-
-    This function 
+    :param keyword_item: a keyword item structure
+    :param links: a list constraining objects
     """
+    if links is None:
+        links = []
 
     logger.debug(f"handle one keyword item {keyword_item['construct']}")
     if keyword_item['language'] == 'en':
         keyword_item = utils.process_sdg_match(keyword_item)
 
-    construct = keyword_item['construct']
-    sdg_id = keyword_item['sdg']['id']
+    info_objects = db.query_keyword_matching_info_object(keyword_item, links)
 
-    info_objects = db.query_keyword_matching_info_object(keyword_item)
+    if len(info_objects) == 0: 
+        return
 
-    links = []
+    result_links = []
 
     for info_object in info_objects:
         # check each info object whether or not it actually matches
         if checkNLPMatch(info_object, keyword_item): 
-            links.append(info_object['link'])
-        
-    if len(links) > 0: 
+            result_links.append(info_object['link'])
+
+    update_input = ""
+
+    if len(result_links) > 0: 
+        construct = keyword_item['construct']
+        sdg_id = keyword_item['sdg']['id']
+
         update_input = {
             "update_input": {
                 "filter": {
                     "link": {
-                        "in": links
+                        "in": result_links
                     }
                 },
                 "set": {
@@ -76,29 +78,40 @@ def handleKeywordItem(keyword_item):
         logger.debug(f"Updating info objects to SDG {sdg_id}: {update_input}")
         db.update_info_object(update_input)
 
-def run(next, use_empty, limitTime):
+def handleIndexChunk(body, keywords):
+    if ('links' in body) and (body['links'] is not None):
+        list = body['links']
+    else:
+        list = []
+    
+    for keyword_item in keywords:
+        handleKeywordItem(keyword_item, list)
+
+def indexTopic(body):
     """
-    runs the next iteration of indexing loop
-    :param next: from where to start the next round
-    :param use_empty: 
-    :return: iterator for the next round
+    Function to handle reindexing of a given topic (e.g., via an updated SDG keyword file).
+    """ 
+    keyword_chunk =  db.query_sdg_keywords(body['sdg'])
+    handleIndexChunk(body, keyword_chunk)
+
+def indexTerm(body):
     """
+    Function to handle reindexing term that were added via the UI
+    """
+    keyword_chunk =  db.query_keyword_term(body['term'])
+    handleIndexChunk(body, keyword_chunk)
 
-    logger.debug("run service function")
-    logger.debug(f"DB_HOST: {settings.DB_HOST}")
-    logger.debug(f"Batch Size: {settings.BATCH_SIZE}")
-    logger.debug(f"Batch Interval: {settings.BATCH_INTERVAL}")
-    logger.debug(f"Log Level: {settings.LOG_LEVEL}")
+mqRoutingFunctions = {
+    "indexer.add":       indexTerm,
+    "indexer.update":    indexTopic,
+    "importer.object":   indexTopic,
+    "importer.evento":   indexTopic,
+    "importer.oai":      indexTopic,
+    "importer.projects": indexTopic
+}
 
-    if use_empty == 1:
-        keyword_chunk =  db.query_empty_keywords(settings.BATCH_SIZE, next, limitTime)
-    else: 
-        keyword_chunk =  db.query_keywords(settings.BATCH_SIZE, next, limitTime)
-
-    for keyword_item in keyword_chunk:
-        handleKeywordItem(keyword_item)
-
-    if len(keyword_chunk) > 0:
-        return next + len(keyword_chunk)
-
-    return 0
+def run(mqKey, mqPayload):    
+    logger.info(f"changed indices for {mqKey}: {mqPayload}")
+    mqRoutingFunctions[mqKey](mqPayload)
+    logger.info(f"updated indices for {mqKey}: {mqPayload}")
+    

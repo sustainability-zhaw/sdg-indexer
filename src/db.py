@@ -1,21 +1,51 @@
 # -*- coding: utf-8 -*-
 
 # import modules
+import logging
+import re
+
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
 import settings
+
+# helper 
+from gql.transport.requests import log as requests_logger
+requests_logger.setLevel(logging.WARNING)
 
 _client = Client(
     transport = RequestsHTTPTransport(url=f"http://{settings.DB_HOST}/graphql"),
     fetch_schema_from_transport=True
 )
 
-def query_keywords(size, offset, limit):
+def query_sdg_keywords(sdg): 
     return _client.execute(
         gql(
             """
-            query($offset: Int, $first: Int, $limitdate: DateTime) {
-                querySdgMatch(filter: {and: [{has: objects}, {has: sdg}, {dateUpdate: {gt: $limitdate}}]}, first: $first, offset: $offset)
+            query($sdg: String!) {
+                querySdgMatch @cascade(fields: ["sdg", "language", "construct"])
+                {
+                    construct
+                    keyword
+                    required_context
+                    forbidden_context
+                    language
+                    sdg(filter: {id: { eq: $sdg }}) { 
+                        id 
+                    }
+                }
+            }
+            """
+        ),
+        variable_values = {
+            "sdg": sdg
+        })['querySdgMatch']
+
+def query_keyword_term(construct): 
+    return _client.execute(
+        gql(
+            """
+            query($construct: String!) {
+                querySdgMatch(filter: {construct: {eq: $construct}}) @cascade(fields: ["sdg", "language", "construct"])
                 {
                     construct
                     keyword
@@ -27,57 +57,36 @@ def query_keywords(size, offset, limit):
                     }
                 }
             }
-            """
+            """ 
         ),
         variable_values = {
-            "offset": offset,
-            "first": size,
-            "limitdate": limit.isoformat()
+            "construct": construct
         })['querySdgMatch']
+    
+def query_keyword_matching_info_object(keyword, links = []):
+    # empty keywords are forbidden
+    if (keyword['keyword'] is None) or (keyword['keyword'] == ''):
+        return []
 
-def query_empty_keywords(size, offset, limit):
-    return _client.execute(
-        gql(
-            """
-            query($offset: Int, $first: Int, $limitdate: DateTime) {
-                querySdgMatch(filter: {and: [{not: {has: objects}}, {has: sdg}, {dateUpdate: {gt: $limitdate}}]}, first: $first, offset: $offset)
-                {
-                    construct
-                    keyword
-                    required_context
-                    forbidden_context
-                    language
-                    sdg { 
-                        id 
-                    }
-                }
-            }
-            """
-        ),
-        variable_values = {
-            "offset": offset,
-            "first": 2*size,
-            "limitdate": limit.isoformat()
-        })['querySdgMatch']
+    if links is None:
+        links = []
 
-def query_keyword_matching_info_object(keyword):
     fields = ["title", "abstract", "extras"]
 
     filter_template = {"filter":
         {"and": [
-            {"language": {"eq": keyword['language']}}
-        ]}}
-
-    if (keyword['keyword'] is not None) and (keyword['keyword'] != ''):
-        filter_template['filter']['and'].append(
+            {"language": {"eq": keyword['language']}},
             { 'or': [
                 {'title': {'alloftext': keyword['keyword']}},
                 {'abstract': {'alloftext': keyword['keyword']}},
                 {'extras': {'alloftext': keyword['keyword']}}
                 ]
             }
-        )
+        ]}}
         
+    if len(links) > 0:
+        filter_template['filter']['and'].append({'link': {'in': links}})
+
     if (keyword['required_context'] is not None) and (keyword['required_context'] != ''):
         filter_template['filter']['and'].append(
             { 'or': [
@@ -117,18 +126,19 @@ def query_keyword_matching_info_object(keyword):
 
 
 def update_info_object(update_input):
-    # insert sdg based on link
-    _client.execute(
-        gql(
-            """
-            mutation updateInfoObject($update_input: UpdateInfoObjectInput!) {
-                updateInfoObject(input: $update_input) {
-                    infoObject {
-                        link     
+    if len(update_input) > 0:
+        # insert sdg based on link
+        _client.execute(
+            gql(
+                """
+                mutation updateInfoObject($update_input: UpdateInfoObjectInput!) {
+                    updateInfoObject(input: $update_input) {
+                        infoObject {
+                            link     
+                        }
                     }
                 }
-            }
-            """
-        ),
-        variable_values=update_input
-    )
+                """
+            ),
+            variable_values=update_input
+        )
