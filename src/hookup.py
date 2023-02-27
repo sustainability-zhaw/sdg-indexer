@@ -79,7 +79,7 @@ def handleKeywordItem(keyword_item, links = []):
         db.update_info_object(update_input)
 
 def handleIndexChunk(body, keywords):
-    if body['links'] is None: 
+    if ('links' not in body) and (body['links'] is None):
         list = []
     else:
         list = body['links']
