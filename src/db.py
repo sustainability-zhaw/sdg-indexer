@@ -2,6 +2,7 @@
 
 # import modules
 import logging
+import re
 
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
@@ -20,7 +21,7 @@ def query_sdg_keywords(sdg):
     return _client.execute(
         gql(
             """
-            query($sdg: String) {
+            query($sdg: String!) {
                 querySdgMatch @cascade(fields: ["sdg", "language", "construct"])
                 {
                     construct
@@ -43,7 +44,7 @@ def query_keyword_term(construct):
     return _client.execute(
         gql(
             """
-            query($sdg: String) {
+            query($construct: String!) {
                 querySdgMatch(filter: {construct: {eq: $construct}}) @cascade(fields: ["sdg", "language", "construct"])
                 {
                     construct
@@ -61,25 +62,31 @@ def query_keyword_term(construct):
         variable_values = {
             "construct": construct
         })['querySdgMatch']
+    
+def query_keyword_matching_info_object(keyword, links = []):
+    # empty keywords are forbidden
+    if (keyword['keyword'] is None) or (keyword['keyword'] == ''):
+        return []
 
-def query_keyword_matching_info_object(keyword):
+    if links is None:
+        links = []
+
     fields = ["title", "abstract", "extras"]
 
     filter_template = {"filter":
         {"and": [
-            {"language": {"eq": keyword['language']}}
-        ]}}
-
-    if (keyword['keyword'] is not None) and (keyword['keyword'] != ''):
-        filter_template['filter']['and'].append(
+            {"language": {"eq": keyword['language']}},
             { 'or': [
                 {'title': {'alloftext': keyword['keyword']}},
                 {'abstract': {'alloftext': keyword['keyword']}},
                 {'extras': {'alloftext': keyword['keyword']}}
                 ]
             }
-        )
+        ]}}
         
+    if len(links) > 0:
+        filter_template['filter']['and'].append({'link': {'in': links}})
+
     if (keyword['required_context'] is not None) and (keyword['required_context'] != ''):
         filter_template['filter']['and'].append(
             { 'or': [

@@ -1,12 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# import modules
-
-import settings
 import logging
 import db
 import utils
-import json
 
 logger = logging.getLogger("sdgindexer")
 
@@ -30,39 +26,42 @@ def checkNLPMatch(infoObject, keyword_item):
     # TODO: Implement token normalisation and then token based order verification
     return True
     
-def handleKeywordItem(keyword_item):
+def handleKeywordItem(keyword_item, links = []):
     """
     handles one key word item. 
-    :param item: a keyword item structure
-    :return: counterpart
-
-    This function 
+    :param keyword_item: a keyword item structure
+    :param links: a list constraining objects
     """
+    if links is None:
+        links = []
 
     logger.debug(f"handle one keyword item {keyword_item['construct']}")
     if keyword_item['language'] == 'en':
         keyword_item = utils.process_sdg_match(keyword_item)
 
-    construct = keyword_item['construct']
-    sdg_id = keyword_item['sdg']['id']
+    info_objects = db.query_keyword_matching_info_object(keyword_item, links)
 
-    info_objects = db.query_keyword_matching_info_object(keyword_item)
+    if len(info_objects) == 0: 
+        return
 
-    links = []
+    result_links = []
 
     for info_object in info_objects:
         # check each info object whether or not it actually matches
         if checkNLPMatch(info_object, keyword_item): 
-            links.append(info_object['link'])
-        
+            result_links.append(info_object['link'])
+
     update_input = ""
 
-    if len(links) > 0: 
+    if len(result_links) > 0: 
+        construct = keyword_item['construct']
+        sdg_id = keyword_item['sdg']['id']
+
         update_input = {
             "update_input": {
                 "filter": {
                     "link": {
-                        "in": links
+                        "in": result_links
                     }
                 },
                 "set": {
@@ -79,48 +78,40 @@ def handleKeywordItem(keyword_item):
         logger.debug(f"Updating info objects to SDG {sdg_id}: {update_input}")
         db.update_info_object(update_input)
 
+def handleIndexChunk(body, keywords):
+    if body['links'] is None: 
+        list = []
+    else:
+        list = body['links']
+    
+    for keyword_item in keywords:
+        handleKeywordItem(keyword_item, list)
 
 def indexTopic(body):
     """
     Function to handle reindexing of a given topic (e.g., via an updated SDG keyword file).
     """ 
-    logger.debug(f"got body: {body}")
-
-    keyword_chunk =  db.query_sdg_keywords(body[0]['sdg'])
-    for keyword_item in keyword_chunk:
-        handleKeywordItem(keyword_item)
-
-
-def indexObjects(body):
-    """
-    Function to handle reindexing of one or more objects
-    """
+    keyword_chunk =  db.query_sdg_keywords(body['sdg'])
+    handleIndexChunk(body, keyword_chunk)
 
 def indexTerm(body):
     """
     Function to handle reindexing term that were added via the UI
     """
     keyword_chunk =  db.query_keyword_term(body['term'])
-    for keyword_item in keyword_chunk:
-        handleKeywordItem(keyword_item)
+    handleIndexChunk(body, keyword_chunk)
 
 mqRoutingFunctions = {
-    "indexer.add": indexTerm,
-    "indexer.update": indexTopic,
-    "importer.object": indexObjects,
-    "importer.evento": indexObjects,
-    "importer.oai": indexObjects,
-    "importer.projects": indexObjects
+    "indexer.add":       indexTerm,
+    "indexer.update":    indexTopic,
+    "importer.object":   indexTopic,
+    "importer.evento":   indexTopic,
+    "importer.oai":      indexTopic,
+    "importer.projects": indexTopic
 }
 
-def handler(ch, method, properties, body):
-    mqKey = method.routing_key
-    mqPayload = json.loads(body)
-    
-    logger.info(f"changed indices for {mqKey}: {body}")
-    
+def run(mqKey, mqPayload):    
+    logger.info(f"changed indices for {mqKey}: {mqPayload}")
     mqRoutingFunctions[mqKey](mqPayload)
-    
-    ch.basic_ack(method.delivery_tag)
-    logger.info(f"updated indices for {mqKey}: {body}")
+    logger.info(f"updated indices for {mqKey}: {mqPayload}")
     
