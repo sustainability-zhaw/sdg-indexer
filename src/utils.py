@@ -60,3 +60,26 @@ def process_sdg_match(sdg_match_record):
 
             sdg_match_record_updated[field] = ' '.join(final_phrases)
     return sdg_match_record_updated
+
+
+def parse_quoted_expression(expression: str):    
+    value = expression.lstrip()
+    
+    negation_match = re.match(r"^not:(.*)", value, re.I)
+    is_negated = negation_match is not None
+    # lstrip result because 'not:' could be followed by one or multiple whitespace(s).
+    value = negation_match.group(1).lstrip() if is_negated else value
+        
+    quote_match = re.match(r"^(['\"])", value)
+    is_quoted = quote_match is not None
+
+    if is_quoted:
+        quote_char = quote_match.group(1)
+        quoted_term_match = re.match(f"^{quote_char}(.*){quote_char}|^{quote_char}(.*)", value)
+        has_closing_quote = quoted_term_match.group(1) is not None
+        # Trailing whitespaces are kept only if a matching closing quote is present.
+        value = quoted_term_match.group(1) if has_closing_quote else quoted_term_match.group(2).rstrip()
+    else:
+        value = value.strip()
+
+    return (value, is_negated) if is_quoted else None
