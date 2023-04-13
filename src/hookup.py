@@ -23,15 +23,16 @@ def checkNLPMatch(infoObject, keyword_item):
     If the query term is quoted no normalisation MUST take place, but the term 
     must exist AS IS.
     """
+
     # TODO: Implement token normalisation and then token based order verification
     quoted_expression = utils.parse_quoted_expression(keyword_item['keyword'])
 
     if quoted_expression:
         value, is_negated = quoted_expression
-        for field_name in ['title', 'abstract', 'extras']:
-            if field_name in infoObject and infoObject[field_name] is not None:
-                if re.search(re.escape(value), infoObject[field_name], re.I):
-                    return False if is_negated else True
+        fields = [infoObject[key] for key in ['title', 'abstract', 'extras'] if key in infoObject and infoObject[key] is not None]
+        text = ' '.join(fields)
+        if re.search(re.escape(value), text, re.I):
+            return False if is_negated else True
         return True if is_negated else False
 
     return True
