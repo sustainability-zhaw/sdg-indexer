@@ -3,6 +3,11 @@
 # import modules
 import pandas as pd
 import re
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.stem import SnowballStemmer
+from iso639 import Language
+
 
 def check_us_and_uk_spelling(item, us_uk_file='https://raw.githubusercontent.com/sustainability-zhaw/keywords/main/data/UK_vs_US.csv'):
     """
@@ -62,7 +67,7 @@ def process_sdg_match(sdg_match_record):
     return sdg_match_record_updated
 
 
-def parse_quoted_expression(expression: str):    
+def parse_quoted_expression(expression: str):
     value = expression.lstrip()
     quote_match = re.match(r"^(['\"])", value)
     is_quoted = quote_match is not None
@@ -75,3 +80,13 @@ def parse_quoted_expression(expression: str):
         value = quoted_term_match.group(1) if has_closing_quote else quoted_term_match.group(2).rstrip()
 
     return value if is_quoted else None
+
+
+def normalize_text(text, lang_code):
+    language = Language.from_part1(lang_code).name.lower()
+    words = word_tokenize(text, language)
+    language_stopwords = stopwords.words(language)
+    # words = [word for word in words if word not in language_stopwords]
+    stemmer = SnowballStemmer(language)
+    words = [stemmer.stem(word) if word not in language_stopwords else word for word in words]
+    return " ".join(words)
