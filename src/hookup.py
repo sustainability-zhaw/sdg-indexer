@@ -23,17 +23,31 @@ def checkNLPMatch(infoObject, keyword_item):
     If the query term is quoted no normalisation MUST take place, but the term 
     must exist AS IS.
     """
+    keyword_fields = list(filter(
+        lambda keyword_field: keyword_field[0] in keyword_item and keyword_item[keyword_field[0]] is not None,
+        [ # Order is important. It defines the exit condition for the loop.
+            ('forbidden_context', lambda found: bool(found)) , # Exclude if match
+            ('required_context', lambda found: not bool(found)), # Exclude if no match
+            ('keyword', lambda found: not bool(found)) # Exclude if no match
+        ]
+    ))
 
-    # TODO: Implement token normalisation and then token based order verification
-    quoted_expression = utils.parse_quoted_expression(keyword_item['keyword'])
+    for keyword_field, should_be_excluded in keyword_fields:
+        match = False
+        quoted_expression = utils.parse_quoted_expression(keyword_item[keyword_field])
 
-    if quoted_expression:
-        value, is_negated = quoted_expression
-        fields = [infoObject[key] for key in ['title', 'abstract', 'extras'] if key in infoObject and infoObject[key] is not None]
-        text = ' '.join(fields)
-        if re.search(re.escape(value), text, re.I):
-            return False if is_negated else True
-        return True if is_negated else False
+        if quoted_expression:
+            content = ' '.join([
+                infoObject[content_field] for content_field in ['title', 'abstract', 'extras'] 
+                if content_field in infoObject and infoObject[content_field] is not None
+            ])
+            match = re.search(re.escape(quoted_expression), content, re.I) is not None
+        else:
+            # TODO: Implement token normalisation and then token based order verification
+            continue
+            
+        if should_be_excluded(match):
+            return False
 
     return True
     
