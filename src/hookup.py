@@ -28,15 +28,15 @@ def checkNLPMatch(infoObject, keyword_item):
     normalized_content = None
     keyword_fields = list(filter(
         lambda keyword_field: keyword_field[0] in keyword_item and keyword_item[keyword_field[0]] is not None,
-        [ # Order is important. It defines the exit condition for the loop.
+        [ # Order is important. It defines the exit condition for the ordered nlp match.
             ("forbidden_context", lambda found: bool(found)) , # Exclude if match
             ("required_context", lambda found: not bool(found)), # Exclude if no match
             ("keyword", lambda found: not bool(found)) # Exclude if no match
         ]
     ))
 
-    for keyword_field, should_be_excluded in keyword_fields:
-        match = False
+    for keyword_field, should_exclude_on_match in keyword_fields:
+        is_match = False
         quoted_expression = utils.parse_quoted_expression(keyword_item[keyword_field])
         content = " ".join([
             infoObject[content_field] for content_field in ["title", "abstract", "extras"]
@@ -44,15 +44,15 @@ def checkNLPMatch(infoObject, keyword_item):
         ])
 
         if quoted_expression:
-            match = re.search(re.escape(quoted_expression), content, re.I) is not None
+            is_match = re.search(re.escape(quoted_expression), content, re.I) is not None
         else:
             if normalized_content is None:
                 normalized_content = utils.normalize_text(content, infoObject["language"])
             normalized_keyword = utils.normalize_text(keyword_item[keyword_field], keyword_item["language"])
             expression = ".*".join(normalized_keyword.split())
-            match = re.search(re.escape(expression), normalized_content, re.I) is not None
+            is_match = re.search(re.escape(expression), normalized_content, re.I) is not None
 
-        if should_be_excluded(match):
+        if should_exclude_on_match(is_match):
             return False
 
     return True
