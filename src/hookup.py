@@ -27,7 +27,7 @@ def checkNLPMatch(infoObject, keyword_item):
     """
     keyword_fields = list(filter(
         lambda keyword_field: keyword_field[0] in keyword_item and keyword_item[keyword_field[0]] is not None,
-        [ # Order is important. It defines the exit condition for the ordered nlp match.
+        [ # Order affects the exclude behaviour.
             ("forbidden_context", lambda found: bool(found)) , # Exclude if match
             ("required_context", lambda found: not bool(found)), # Exclude if no match
             ("keyword", lambda found: not bool(found)) # Exclude if no match
