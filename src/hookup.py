@@ -25,7 +25,6 @@ def checkNLPMatch(infoObject, keyword_item):
     If the query term is quoted no normalisation MUST take place, but the term 
     must exist AS IS.
     """
-    normalized_content = None
     keyword_fields = list(filter(
         lambda keyword_field: keyword_field[0] in keyword_item and keyword_item[keyword_field[0]] is not None,
         [ # Order is important. It defines the exit condition for the ordered nlp match.
@@ -35,13 +34,15 @@ def checkNLPMatch(infoObject, keyword_item):
         ]
     ))
 
+    content = " ".join([
+        infoObject[content_field] for content_field in ["title", "abstract", "extras"]
+        if content_field in infoObject and infoObject[content_field] is not None
+    ])
+    normalized_content = None
+
     for keyword_field, should_exclude_on_match in keyword_fields:
         is_match = False
         quoted_expression = utils.parse_quoted_expression(keyword_item[keyword_field])
-        content = " ".join([
-            infoObject[content_field] for content_field in ["title", "abstract", "extras"]
-            if content_field in infoObject and infoObject[content_field] is not None
-        ])
 
         if quoted_expression:
             is_match = re.search(re.escape(quoted_expression), content, re.I) is not None
