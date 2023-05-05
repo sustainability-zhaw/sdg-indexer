@@ -3,6 +3,7 @@
 # import modules
 import pandas as pd
 import re
+import string
 from nltk.tokenize import word_tokenize
 from nltk.stem import SnowballStemmer
 from iso639 import Language
@@ -84,7 +85,6 @@ def parse_quoted_expression(expression: str):
 def normalize_text(text, lang_code):
     language = Language.from_part1(lang_code).name.lower()
     words = word_tokenize(text, language)
-    #TODO: Remove punctuation
     stemmer = SnowballStemmer(language, ignore_stopwords=True)
-    words = [stemmer.stem(word) for word in words]
+    words = [stemmer.stem(word) for word in words if word not in string.punctuation]
     return " ".join(words)
