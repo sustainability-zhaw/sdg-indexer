@@ -49,8 +49,8 @@ def checkNLPMatch(infoObject, keyword_item):
             if normalized_content is None:
                 normalized_content = utils.normalize_text(content, infoObject["language"])
             normalized_keyword = utils.normalize_text(keyword_item[keyword_field], keyword_item["language"])
-            expression = ".*".join(normalized_keyword.split())
-            is_match = re.search(re.escape(expression), normalized_content, re.I) is not None
+            expression = ".*".join([re.escape(word) for word in normalized_keyword.split()])
+            is_match = re.search(expression, normalized_content, re.I) is not None
 
         if should_exclude_on_match(is_match):
             return False
