@@ -9,6 +9,7 @@ COPY requirements.txt /requirements.txt
 RUN mkdir -p /app && \
     pip install -r requirements.txt && \
     rm requirements.txt && \
+    python -c "import nltk;nltk.download('punkt');nltk.download('stopwords')" && \
     groupadd -r app && \
     useradd --no-log-init -r -g app app && \
     chmod -R 775 /app

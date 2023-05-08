@@ -5,7 +5,9 @@ import re
 import db
 import utils
 
+
 logger = logging.getLogger("sdgindexer")
+
 
 def checkNLPMatch(infoObject, keyword_item):
     """
@@ -25,28 +27,33 @@ def checkNLPMatch(infoObject, keyword_item):
     """
     keyword_fields = list(filter(
         lambda keyword_field: keyword_field[0] in keyword_item and keyword_item[keyword_field[0]] is not None,
-        [ # Order is important. It defines the exit condition for the loop.
-            ('forbidden_context', lambda found: bool(found)) , # Exclude if match
-            ('required_context', lambda found: not bool(found)), # Exclude if no match
-            ('keyword', lambda found: not bool(found)) # Exclude if no match
+        [ # Order affects the exclude behaviour.
+            ("forbidden_context", lambda found: bool(found)) , # Exclude if match
+            ("required_context", lambda found: not bool(found)), # Exclude if no match
+            ("keyword", lambda found: not bool(found)) # Exclude if no match
         ]
     ))
 
-    for keyword_field, should_be_excluded in keyword_fields:
-        match = False
+    content = " ".join([
+        infoObject[content_field] for content_field in ["title", "abstract", "extras"]
+        if content_field in infoObject and infoObject[content_field] is not None
+    ])
+    normalized_content = None
+
+    for keyword_field, should_exclude_on_match in keyword_fields:
+        is_match = False
         quoted_expression = utils.parse_quoted_expression(keyword_item[keyword_field])
 
         if quoted_expression:
-            content = ' '.join([
-                infoObject[content_field] for content_field in ['title', 'abstract', 'extras'] 
-                if content_field in infoObject and infoObject[content_field] is not None
-            ])
-            match = re.search(re.escape(quoted_expression), content, re.I) is not None
+            is_match = re.search(re.escape(quoted_expression), content, re.I) is not None
         else:
-            # TODO: Implement token normalisation and then token based order verification
-            continue
-            
-        if should_be_excluded(match):
+            if normalized_content is None:
+                normalized_content = utils.normalize_text(content, infoObject["language"])
+            normalized_keyword = utils.normalize_text(keyword_item[keyword_field], keyword_item["language"])
+            expression = ".*".join([re.escape(word) for word in normalized_keyword.split()])
+            is_match = re.search(expression, normalized_content, re.I) is not None
+
+        if should_exclude_on_match(is_match):
             return False
 
     return True
