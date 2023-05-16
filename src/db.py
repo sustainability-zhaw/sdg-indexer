@@ -72,6 +72,9 @@ def query_keyword_matching_info_object(keyword, links = []):
         links = []
 
     fields = ["title", "abstract", "extras"]
+       
+    if len(links) > 0:
+        filter_template['filter']['and'].append({'link': {'in': links}})
 
     filter_template = {"filter":
         {"and": [
@@ -83,10 +86,7 @@ def query_keyword_matching_info_object(keyword, links = []):
                 ]
             }
         ]}}
-        
-    if len(links) > 0:
-        filter_template['filter']['and'].append({'link': {'in': links}})
-
+     
     if (keyword['required_context'] is not None) and (keyword['required_context'] != ''):
         filter_template['filter']['and'].append(
             { 'or': [
