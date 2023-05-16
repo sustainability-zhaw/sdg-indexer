@@ -134,12 +134,12 @@ def indexTerm(body):
     handleIndexChunk(body, keyword_chunk)
 
 mqRoutingFunctions = {
-    "indexer.add":       indexTerm,
-    "indexer.update":    indexTopic,
-    "importer.object":   indexTopic,
-    "importer.evento":   indexTopic,
-    "importer.oai":      indexTopic,
-    "importer.projects": indexTopic
+    "indexer.add":       indexTerm,  # sent by GitHub webhook
+    "indexer.update":    indexTopic, # not used
+    "importer.object":   indexTopic, # all importer services send this topic
+    "importer.evento":   indexTopic, # not used
+    "importer.oai":      indexTopic, # not used
+    "importer.projects": indexTopic  # not used
 }
 
 def run(mqKey, mqPayload):    
