@@ -138,7 +138,7 @@ def indexObject(body):
     Function to handle reindexing of a given object whenever an importer reports a single new object.
     The body contains the link to the infoObject in the database.
     """
-    keyword_chunk =  db.query_all_keywords()
+    keyword_chunk =  db.query_all_keywords() # potential improvements: only query those keywords that potentially match.
     handleIndexChunk(body, keyword_chunk) # This function is suboptimal because it loads the known object for each and every keyword again.
     # Idea: Loop over the keywords and test checkNLPMatch for the linked infoObject.
 
