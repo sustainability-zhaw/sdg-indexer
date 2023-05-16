@@ -133,13 +133,21 @@ def indexTerm(body):
     keyword_chunk =  db.query_keyword_term(body['term'])
     handleIndexChunk(body, keyword_chunk)
 
+def indexObject(body):
+    """
+    Function to handle reindexing of a given object whenever an importer reports a single new object.
+    The body contains the link to the infoObject in the database.
+    """
+    keyword_chunk =  db.query_all_keywords()
+    handleIndexChunk(body, keyword_chunk)
+
 mqRoutingFunctions = {
-    "indexer.add":       indexTerm,  # sent by GitHub webhook
-    "indexer.update":    indexTopic, # not used
-    "importer.object":   indexTopic, # all importer services send this topic
-    "importer.evento":   indexTopic, # not used
-    "importer.oai":      indexTopic, # not used
-    "importer.projects": indexTopic  # not used
+    "indexer.add":       indexTerm,  # sent by UI changes
+    "indexer.update":    indexTopic, # sent by GitHub webhook
+    "importer.object":   indexObject, # all importer services send this topic
+    "importer.evento":   indexObject, # not used
+    "importer.oai":      indexObject, # not used
+    "importer.projects": indexObject  # not used
 }
 
 def run(mqKey, mqPayload):    
