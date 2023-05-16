@@ -139,7 +139,8 @@ def indexObject(body):
     The body contains the link to the infoObject in the database.
     """
     keyword_chunk =  db.query_all_keywords()
-    handleIndexChunk(body, keyword_chunk)
+    handleIndexChunk(body, keyword_chunk) # This function is suboptimal because it loads the known object for each and every keyword again.
+    # Idea: Loop over the keywords and test checkNLPMatch for the linked infoObject.
 
 mqRoutingFunctions = {
     "indexer.add":       indexTerm,  # sent by UI changes
