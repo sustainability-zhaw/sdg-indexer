@@ -138,9 +138,29 @@ def indexObject(body):
     Function to handle reindexing of a given object whenever an importer reports a single new object.
     The body contains the link to the infoObject in the database.
     """
-    keyword_chunk =  db.query_all_keywords() # potential improvements: only query those keywords that potentially match.
-    handleIndexChunk(body, keyword_chunk) # This function is suboptimal because it loads the known object for each and every keyword again.
-    # Idea: Loop over the keywords and test checkNLPMatch for the linked infoObject.
+    info_object = db.query_info_object_by_link(body["link"])
+
+    if not info_object:
+        return
+
+    content = " ".join([
+        info_object[content_field] for content_field in ["title", "abstract", "extras"]
+        if content_field in info_object and info_object[content_field] is not None
+    ])
+
+    tokens = utils.tokenize_text(content, info_object["language"])
+    sdg_matches =  db.query_all_sdgMatch_where_keyword_contains_any_of(tokens)
+    sdg_matches = [sdg_match for sdg_match in sdg_matches if checkNLPMatch(info_object, sdg_match)]
+
+    db.update_info_object({
+        "update_input": {
+            "filter": { "link": { "eq": info_object["link"] } },
+            "set": { 
+                "sdg_matches": sdg_matches,
+                "sdgs": list([{ "id": sdg_match["sdg"]["id"] } for sdg_match in sdg_matches])
+             }
+        }
+    })
 
 mqRoutingFunctions = {
     "indexer.add":       indexTerm,  # sent by UI changes

@@ -124,7 +124,6 @@ def query_keyword_matching_info_object(keyword, links = []):
         variable_values=filter_template
     )['queryInfoObject']
 
-
 def update_info_object(update_input):
     if len(update_input) > 0:
         # insert sdg based on link
@@ -142,3 +141,48 @@ def update_info_object(update_input):
             ),
             variable_values=update_input
         )
+
+def query_info_object_by_link(link):
+    return _client.execute(
+        gql(
+            """
+            query getInfoObject($link: String!) {
+                getInfoObject(link: $link) {
+                    link
+                    title
+                    abstract
+                    extras
+                    language
+                }
+            }
+            """
+        ),
+        variable_values={ "link": link }
+    )["getInfoObject"]
+
+def query_all_sdgMatch_where_keyword_contains_any_of(tokens):
+    return _client.execute(
+        gql(
+            """
+            query querySdgMatch($filter: SdgMatchFilter) {
+                querySdgMatch(filter: $filter) {
+                    construct
+                    keyword
+                    required_context
+                    forbidden_context
+                    language
+                    sdg { 
+                        id
+                    }
+                }
+            }
+            """
+        ),
+        variable_values={
+            "filter": {
+                "keyword": {
+                    "regexp": f"/{ '|'.join([re.escape(token) for token in tokens]) }/i"
+                }
+            }
+        }
+    )["querySdgMatch"]
