@@ -146,9 +146,6 @@ mqRoutingFunctions = {
     "indexer.add":       indexTerm,  # sent by UI changes
     "indexer.update":    indexTopic, # sent by GitHub webhook
     "importer.object":   indexObject, # all importer services send this topic
-    "importer.evento":   indexObject, # not used
-    "importer.oai":      indexObject, # not used
-    "importer.projects": indexObject  # not used
 }
 
 def run(mqKey, mqPayload):    
