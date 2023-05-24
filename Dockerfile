@@ -6,18 +6,20 @@ ENV LOG_LEVEL=DEBUG
 
 COPY requirements.txt /requirements.txt
 
-RUN mkdir -p /app && \
-    pip install -r requirements.txt && \
-    rm requirements.txt && \
-    python -c "import nltk;nltk.download('punkt');nltk.download('stopwords')" && \
-    groupadd -r app && \
-    useradd --no-log-init -r -g app app && \
+RUN groupadd app && \
+    useradd --no-log-init -m -g app app && \
+    mkdir /app && \
     chmod -R 775 /app
+
+RUN pip install -r requirements.txt && \
+    rm requirements.txt
 
 COPY src/ /app/
 
-WORKDIR /app
-
 USER app
+
+RUN python -c "import nltk;nltk.download('punkt');nltk.download('stopwords')"
+
+WORKDIR /app
 
 CMD [ "python", "main.py" ]
