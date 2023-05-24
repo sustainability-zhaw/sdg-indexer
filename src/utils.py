@@ -4,8 +4,10 @@
 import pandas as pd
 import re
 import string
+import nltk
 from nltk.tokenize import word_tokenize
 from nltk.stem import SnowballStemmer
+from nltk.corpus import stopwords
 from iso639 import Language
 
 
@@ -88,3 +90,11 @@ def normalize_text(text, lang_code):
     stemmer = SnowballStemmer(language, ignore_stopwords=True)
     words = [stemmer.stem(word) for word in words if word not in string.punctuation]
     return " ".join(words)
+
+
+def tokenize_text(text, lang_code):
+    language = Language.from_part1(lang_code).name.lower()
+    tokens = word_tokenize(text, language)
+    stop_words = stopwords.words(language)
+    tokens = [token for token in tokens if token not in stop_words and token not in string.punctuation and len(token) > 1]
+    return set(tokens)
