@@ -19,6 +19,8 @@ def consume_handler(ch, method, properties, body):
     ch.basic_ack(method.delivery_tag)
 
 def main():
+    logging.getLogger("pika").setLevel(logging.WARNING)
+    
     logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level=settings.LOG_LEVEL)
 
     logger = logging.getLogger("sdgindexer-loop")
