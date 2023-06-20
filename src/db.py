@@ -181,7 +181,7 @@ def query_all_sdgMatch_where_keyword_contains_any_of(tokens):
         variable_values={
             "filter": {
                 "keyword": {
-                    "regexp": f"/{ '|'.join([re.escape(token) for token in tokens]) }/i"
+                    "anyofterms": " ".join(tokens)
                 }
             }
         }
