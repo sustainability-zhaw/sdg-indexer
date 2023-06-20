@@ -8,6 +8,8 @@ import pika
 import settings
 import hookup
 
+logger = logging.getLogger("sdgindexer-loop")
+
 def consume_handler(ch, method, properties, body):
     """
     Callback for the message queue. 
@@ -15,6 +17,9 @@ def consume_handler(ch, method, properties, body):
     This function handles the synchroneous message handling and informs the MQ once a 
     message has been successfully handled. 
     """
+    
+    logger.info("Received message: %s", body)
+
     hookup.run(method.routing_key, json.loads(body))
     ch.basic_ack(method.delivery_tag)
 
@@ -22,9 +27,7 @@ def main():
     logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level=settings.LOG_LEVEL)
 
     logging.getLogger("pika").setLevel(logging.WARNING)
-
-    logger = logging.getLogger("sdgindexer-loop")
-
+    
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(host=settings.MQ_HOST,
                                   heartbeat=settings.MQ_HEARTBEAT,
