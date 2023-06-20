@@ -17,9 +17,6 @@ def consume_handler(ch, method, properties, body):
     This function handles the synchroneous message handling and informs the MQ once a 
     message has been successfully handled. 
     """
-    
-    logger.info("Received message: %s", body)
-
     hookup.run(method.routing_key, json.loads(body))
     ch.basic_ack(method.delivery_tag)
 
