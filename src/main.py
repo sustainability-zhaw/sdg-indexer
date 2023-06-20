@@ -24,12 +24,18 @@ def main():
     logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level=settings.LOG_LEVEL)
 
     logging.getLogger("pika").setLevel(logging.WARNING)
-    
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(host=settings.MQ_HOST,
-                                  heartbeat=settings.MQ_HEARTBEAT,
-                                  blocked_connection_timeout=settings.MQ_TIMEOUT))
+        
+    logger.info("init message queue connection")
 
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(
+            host=settings.MQ_HOST,
+            heartbeat=settings.MQ_HEARTBEAT,
+            blocked_connection_timeout=settings.MQ_TIMEOUT
+        )
+    )
+
+    logger.info("init message queue channel")
     channel = connection.channel()
 
     channel.exchange_declare(exchange=settings.MQ_EXCHANGE, exchange_type='topic')
@@ -38,6 +44,7 @@ def main():
 
     queue_name = result.method.queue
    
+    logger.info("bind all keys to queue")
     for binding_key in settings.MQ_BINDKEYS:
         channel.queue_bind(
             exchange=settings.MQ_EXCHANGE, 
@@ -51,14 +58,17 @@ def main():
     # register consuming function as callback
     channel.basic_consume(
         queue=queue_name, 
-        on_message_callback=consume_handler)
+        on_message_callback=consume_handler
+    )
 
     try:
+        logger.info("start consuming")
         channel.start_consuming()
     except KeyboardInterrupt:
+        logger.info("interactive termination")   
         channel.stop_consuming()
+        connection.close()
 
-    connection.close()
 
 if __name__ == "__main__":
     main()
