@@ -17,6 +17,7 @@ def consume_handler(ch, method, properties, body):
     This function handles the synchroneous message handling and informs the MQ once a 
     message has been successfully handled. 
     """
+    logger.debug("received message")
     hookup.run(method.routing_key, json.loads(body))
     ch.basic_ack(method.delivery_tag)
 
@@ -38,7 +39,10 @@ def main():
     logger.info("init message queue channel")
     channel = connection.channel()
 
-    channel.exchange_declare(exchange=settings.MQ_EXCHANGE, exchange_type='topic')
+    channel.exchange_declare(
+        exchange=settings.MQ_EXCHANGE, 
+        exchange_type='topic'
+    )
 
     result = channel.queue_declare(settings.MQ_QUEUE, exclusive=False)
 
@@ -49,7 +53,8 @@ def main():
         channel.queue_bind(
             exchange=settings.MQ_EXCHANGE, 
             queue=queue_name, 
-            routing_key=binding_key)
+            routing_key=binding_key
+        )
 
     # switch message round-robin assignment to ready processes first
     # Force service to handle one message at the time!
