@@ -11,7 +11,7 @@ _settings = {
     "MQ_BINDKEYS": ["indexer.*", "importer.object"],
     "MQ_HEARTBEAT": 6000,
     "MQ_TIMEOUT": 3600,
-    "MQ_QUEUE": "indexqueue"
+    "MQ_QUEUE": "indexerqueue"
 }
 
 if os.path.exists('/etc/app/config.json'):
