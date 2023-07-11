@@ -26,7 +26,7 @@ def main():
 
     logging.getLogger("pika").setLevel(logging.WARNING)
         
-    logger.info("init message queue connection")
+    logger.info(f"init message queue connection to host '{settings.MQ_HOST}'")
 
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(
@@ -48,7 +48,8 @@ def main():
 
     queue_name = result.method.queue
    
-    logger.info("bind all keys to queue")
+    logger.info(f"bind all keys to queue '{settings.MQ_QUEUE}' and '{queue_name}'")
+
     for binding_key in settings.MQ_BINDKEYS:
         channel.queue_bind(
             exchange=settings.MQ_EXCHANGE, 
