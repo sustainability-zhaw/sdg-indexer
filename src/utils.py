@@ -1,15 +1,13 @@
-# -*- coding: utf-8 -*-
-
 # import modules
-import pandas as pd
 import re
 import string
+
+import pandas as pd
 import nltk
 from nltk.tokenize import word_tokenize
 from nltk.stem import SnowballStemmer
 from nltk.corpus import stopwords
 from iso639 import Language
-
 
 def check_us_and_uk_spelling(item, us_uk_file='https://raw.githubusercontent.com/sustainability-zhaw/keywords/main/data/UK_vs_US.csv'):
     """
@@ -70,16 +68,19 @@ def process_sdg_match(sdg_match_record):
 
 
 def parse_quoted_expression(expression: str):
-    value = expression.lstrip()
+    value = expression.lstrip() # ensure no leading whitespaces
     quote_match = re.match(r"^(['\"])", value)
     is_quoted = quote_match is not None
 
     if is_quoted:
         quote_char = quote_match.group(1)
-        quoted_term_match = re.match(f"^{quote_char}(.*){quote_char}|^{quote_char}(.*)", value)
-        has_closing_quote = quoted_term_match.group(1) is not None
-        # Trailing whitespaces are kept only if a matching closing quote is present.
-        value = quoted_term_match.group(1) if has_closing_quote else quoted_term_match.group(2).rstrip()
+
+        # strip quotes from the value
+        value = re.sub(f"^{quote_char}([^{quote_char}]*)(?:{quote_char}.*)?$", "\\1", value)
+        value = re.sub("\s+", " " , value) # normalize inner whitespace
+        value = re.escape(value) # escape special characters
+        # replace leading and trailing whitespace with word boundary
+        value = re.sub("^\\\\\\s|\\\\\\s$", "\\\\b", value)
 
     return value if is_quoted else None
 

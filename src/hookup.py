@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import logging
 import re
 import db
@@ -44,8 +42,8 @@ def checkNLPMatch(infoObject, keyword_item):
         is_match = False
         quoted_expression = utils.parse_quoted_expression(keyword_item[keyword_field])
 
-        if quoted_expression:
-            is_match = re.search(re.escape(quoted_expression), content, re.I) is not None
+        if quoted_expression is not None:
+            is_match = re.search(quoted_expression, content, re.I) is not None
         else:
             if normalized_content is None:
                 normalized_content = utils.normalize_text(content, infoObject["language"])
