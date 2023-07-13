@@ -40,6 +40,10 @@ def process_sdg_match(sdg_match_record):
             if sdg_match_record[field] is None: 
                 continue
 
+            # handle quoted expressions correctly
+            if re.search(r"^['\"']+", sdg_match_record[field]) is not None:
+                continue
+
             phrases = re.split("[^\w\d]+", sdg_match_record[field])  # process comma separated phrases
             final_phrases = []
 
