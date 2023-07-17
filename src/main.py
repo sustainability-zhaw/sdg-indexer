@@ -21,13 +21,10 @@ def consume_handler(ch, method, properties, body):
     hookup.run(method.routing_key, json.loads(body))
     ch.basic_ack(method.delivery_tag)
 
-def main():
-    logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level=settings.LOG_LEVEL)
-
-    logging.getLogger("pika").setLevel(logging.WARNING)
-        
-    logger.info(f"init message queue connection to host '{settings.MQ_HOST}'")
-
+def init_connection():
+    """
+    set up the connection to the message queue and register the consume handler
+    """
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(
             host=settings.MQ_HOST,
@@ -70,11 +67,28 @@ def main():
     try:
         logger.info("start consuming")
         channel.start_consuming()
-    except KeyboardInterrupt:
+    except KeyboardInterrupt as kE:
         logger.info("interactive termination")   
         channel.stop_consuming()
         connection.close()
+        raise kE
+    
+def main():
+    logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level=settings.LOG_LEVEL)
 
+    logging.getLogger("pika").setLevel(logging.WARNING)
+        
+    logger.info(f"init message queue connection to host '{settings.MQ_HOST}'")
+
+    
+    while True:
+        try:
+            init_connection()
+        except Exception:
+            logger.exception("error while consuming")
+            break
+    
+        logger.info("exit service")
 
 if __name__ == "__main__":
     main()
