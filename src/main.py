@@ -39,10 +39,14 @@ def init_connection():
 
     channel.exchange_declare(
         exchange=settings.MQ_EXCHANGE, 
-        exchange_type='topic'
+        exchange_type='topic',
+        durable=False
     )
 
-    result = channel.queue_declare(settings.MQ_QUEUE, exclusive=False)
+    result = channel.queue_declare(
+        settings.MQ_QUEUE, 
+        exclusive=False
+    )
 
     queue_name = result.method.queue
    
