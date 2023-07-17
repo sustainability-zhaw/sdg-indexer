@@ -148,17 +148,27 @@ def indexObject(body):
 
     tokens = utils.tokenize_text(content, info_object["language"])
     sdg_matches =  db.query_all_sdgMatch_where_keyword_contains_any_of(tokens)
-    sdg_matches = [sdg_match for sdg_match in sdg_matches if checkNLPMatch(info_object, sdg_match)]
 
-    db.update_info_object({
-        "update_input": {
-            "filter": { "link": { "eq": info_object["link"] } },
-            "set": { 
-                "sdg_matches": sdg_matches,
-                "sdgs": list([{ "id": sdg_match["sdg"]["id"] } for sdg_match in sdg_matches])
-             }
-        }
-    })
+    # the following comprehension does not deliver what it promises
+    sdg_results = [sdg_match for sdg_match in sdg_matches if checkNLPMatch(info_object, sdg_match)]
+
+    # sdg_results = []
+
+    # for sdg_match in sdg_matches:
+    #     if checkNLPMatch(info_object, sdg_match):
+    #         sdg_results.append(sdg_match)
+
+
+    if (len(sdg_results) > 0):
+        db.update_info_object({
+            "update_input": {
+                "filter": { "link": { "eq": info_object["link"] } },
+                "set": { 
+                    "sdg_matches": sdg_matches,
+                    "sdgs": list([{ "id": sdg_match["sdg"]["id"] } for sdg_match in sdg_matches])
+                 }
+            }
+        })
 
 mqRoutingFunctions = {
     "indexer.add":       indexTerm,  # sent by UI changes
