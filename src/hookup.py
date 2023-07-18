@@ -36,17 +36,18 @@ def checkNLPMatch(infoObject, keyword_item):
         infoObject[content_field] for content_field in ["title", "abstract", "extras"]
         if content_field in infoObject and infoObject[content_field] is not None
     ])
-    normalized_content = None
+
+    normalized_content = utils.normalize_text(content, infoObject["language"])
 
     for keyword_field, should_exclude_on_match in keyword_fields:
         is_match = False
         quoted_expression = utils.parse_quoted_expression(keyword_item[keyword_field])
 
         if quoted_expression is not None:
+            logger.debug(f"index with quoted expression: {quoted_expression}")
             is_match = re.search(quoted_expression, content, re.I) is not None
         else:
-            if normalized_content is None:
-                normalized_content = utils.normalize_text(content, infoObject["language"])
+            logger.debug(f"index with NLP normalisation: {keyword_item[keyword_field]}")
             normalized_keyword = utils.normalize_text(keyword_item[keyword_field], keyword_item["language"])
             expression = ".*".join([re.escape(word) for word in normalized_keyword.split()])
             is_match = re.search(expression, normalized_content, re.I) is not None

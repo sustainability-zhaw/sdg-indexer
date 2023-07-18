@@ -75,19 +75,20 @@ def process_sdg_match(sdg_match_record):
 def parse_quoted_expression(expression: str):
     value = expression.lstrip() # ensure no leading whitespaces
     quote_match = re.match(r"^(['\"])", value)
-    is_quoted = quote_match is not None
 
-    if is_quoted:
-        quote_char = quote_match.group(1)
+    if quote_match is None:
+        return None
 
-        # strip quotes from the value
-        value = re.sub(f"^{quote_char}([^{quote_char}]*)(?:{quote_char}.*)?$", "\\1", value)
-        value = re.sub("\s+", " " , value) # normalize inner whitespace
-        value = re.escape(value) # escape special characters
-        # replace leading and trailing whitespace with word boundary
-        value = re.sub("^\\\\\\s|\\\\\\s$", "\\\\b", value)
+    value = re.sub("\s+", " " , value) # normalize inner whitespace
 
-    return value if is_quoted else None
+    quote_char = quote_match.group(1)
+
+    # strip quotes from the value
+    value = re.sub(f"^{quote_char}([^{quote_char}]*)(?:{quote_char}.*)?$", "\\1", value)
+    value = re.escape(value) # escape special characters
+    # replace leading and trailing whitespace with word boundary
+    value = re.sub("^\\\\\\s|\\\\\\s$", "\\\\b", value)
+    return value
 
 
 def normalize_text(text, lang_code):
