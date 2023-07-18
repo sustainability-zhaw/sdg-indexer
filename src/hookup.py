@@ -3,6 +3,7 @@ import re
 import db
 import utils
 
+import json
 
 logger = logging.getLogger("sdgindexer")
 
@@ -66,7 +67,9 @@ def handleKeywordItem(keyword_item, links = []):
     if links is None:
         links = []
 
-    logger.debug(f"handle one keyword item {keyword_item['construct']}")
+    logger.debug(f"handle one keyword item {json.dump(keyword_item)}")
+    # logger.debug(f"handle one keyword item {keyword_item['construct']}")
+
     if keyword_item['language'] == 'en':
         keyword_item = utils.process_sdg_match(keyword_item)
 
@@ -75,11 +78,14 @@ def handleKeywordItem(keyword_item, links = []):
     if len(info_objects) == 0: 
         return
 
+    logger.debug(f"found {len(info_objects)} protential objects for keyword item {keyword_item['construct']}")
+    
     result_links = []
 
     for info_object in info_objects:
         # check each info object whether or not it actually matches
-        if checkNLPMatch(info_object, keyword_item): 
+        if checkNLPMatch(info_object, keyword_item):
+            logger.debug(f"found match for keyword item {keyword_item['construct']} in info object {info_object['link']}")
             result_links.append(info_object['link'])
 
     update_input = ""
