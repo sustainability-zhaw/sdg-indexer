@@ -66,7 +66,7 @@ def init_connection():
     # register consuming function as callback
     channel.basic_consume(
         queue=queue_name, 
-        auto_ack=False,
+        # auto_ack=False,
         on_message_callback=consume_handler
     )
 
