@@ -67,7 +67,6 @@ def init_connection():
     channel.basic_consume(
         queue=queue_name, 
         auto_ack=False,
-        no_ack=True,
         on_message_callback=consume_handler
     )
 
