@@ -67,7 +67,7 @@ def handleKeywordItem(keyword_item, links = []):
     if links is None:
         links = []
 
-    logger.debug(f"handle one keyword item {json.dump(keyword_item)}")
+    logger.debug(f"handle one keyword item {json.dumps(keyword_item)}")
     # logger.debug(f"handle one keyword item {keyword_item['construct']}")
 
     if keyword_item['language'] == 'en':
