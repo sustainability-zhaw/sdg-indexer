@@ -9,8 +9,8 @@ _settings = {
     "MQ_HOST": "mq",
     "MQ_EXCHANGE": "zhaw-km",
     "MQ_BINDKEYS": ["indexer.*", "importer.object"],
-    "MQ_HEARTBEAT": 6000,
-    "MQ_TIMEOUT": 3600,
+    "MQ_HEARTBEAT": 500,
+    "MQ_TIMEOUT": 60,
     "MQ_QUEUE": "indexerqueue"
 }
 
