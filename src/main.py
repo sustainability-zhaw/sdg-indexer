@@ -76,18 +76,18 @@ def init_connection():
         channel.start_consuming()
     except pika.exceptions.ChannelClosedByBroker as pE:
         logger.info("channel closed by broker")   
-        channel.stop_consuming()
+        #channel.stop_consuming()
         connection.close()
         raise pE
     except pika.exceptions.ConnectionClosedByBroker as pE:
-        logger.info("challel closed by broker")   
-        channel.stop_consuming()
-        connection.close()
+        logger.info("channel closed by broker")   
+        #channel.stop_consuming()
+        #connection.close()
         raise pE
     except pika.exceptions.StreamLostError as sE:
-        logger.info("challel closed by broker")   
-        channel.stop_consuming()
-        connection.close()
+        logger.info("channel connection lost")   
+        #channel.stop_consuming()
+        #connection.close()
         raise sE
     except KeyboardInterrupt as kE:
         logger.info("interactive termination")   
