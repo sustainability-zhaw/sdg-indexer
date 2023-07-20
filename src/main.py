@@ -79,16 +79,16 @@ def init_connection():
         channel.stop_consuming()
         connection.close()
         raise pE
-    except pika.exceptions.ConnectionResetError as pE:
-        logger.info("channel closed by broker")   
-        channel.stop_consuming()
-        connection.close()
-        raise pE
     except pika.exceptions.ConnectionClosedByBroker as pE:
         logger.info("challel closed by broker")   
         channel.stop_consuming()
         connection.close()
         raise pE
+    except pika.exceptions.StreamLostError as sE:
+        logger.info("challel closed by broker")   
+        channel.stop_consuming()
+        connection.close()
+        raise sE
     except KeyboardInterrupt as kE:
         logger.info("interactive termination")   
         channel.stop_consuming()
@@ -106,16 +106,18 @@ def main():
     while True:
         try:
             init_connection()
+        except pika.exceptions.StreamLostError as sE:
+            logger.error(f"stream lost error {sE}")
+            # reconnect right away
         except pika.exceptions.ChannelClosedByBroker:
+            logger.error(f"channel close error {pE}")
             time.sleep(15) # wait for rabbitmq or docker to resettle
         except pika.exceptions.ConnectionClosedByBroker:
+            logger.error(f"connection close error {pE}")
             time.sleep(35) # wait for rabbitmq to restart (approx 30 or so seconds)
         except KeyboardInterrupt:
             logger.info("shutdown by user")
             break
-        except pika.exceptions.ConnectionResetError as pE:
-            logger.error(f"connection reset error {pE}")
-            time.sleep(15)
 
         logger.info("exit service")
 
