@@ -7,6 +7,7 @@ import pika
 
 import settings
 import hookup
+import time
 
 logger = logging.getLogger("sdgindexer-loop")
 
@@ -73,11 +74,21 @@ def init_connection():
     try:
         logger.info("start consuming")
         channel.start_consuming()
-    except KeyboardInterrupt as kE:
+    except pika.exceptions.ChannelClosedByBroker as kE:
+        logger.info("channel closed by broker")   
+        channel.stop_consuming()
+        connection.close()
+        raise pE
+    except pika.exceptions.ConnectionClosedByBroker as pE:
+        logger.info("challel closed by broker")   
+        channel.stop_consuming()
+        connection.close()
+        raise pE
+    except KeyboardInterrupt as pE:
         logger.info("interactive termination")   
         channel.stop_consuming()
         connection.close()
-        raise kE
+        raise pE
     
 def main():
     logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level=settings.LOG_LEVEL)
@@ -90,10 +101,14 @@ def main():
     while True:
         try:
             init_connection()
-        except Exception:
-            logger.exception("error while consuming")
+        except pika.exceptions.ChannelClosedByBroker:
+            time.sleep(15) # wait for rabbitmq or docker to resettle
+        except pika.exceptions.ConnectionClosedByBroker:
+            time.sleep(35) # wait for rabbitmq to restart (approx 30 or so seconds)
+        except KeyboardInterrupt:
+            logger.exception("shutdown by user")
             break
-    
+
         logger.info("exit service")
 
 if __name__ == "__main__":
