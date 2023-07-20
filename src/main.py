@@ -74,7 +74,12 @@ def init_connection():
     try:
         logger.info("start consuming")
         channel.start_consuming()
-    except pika.exceptions.ChannelClosedByBroker as kE:
+    except pika.exceptions.ChannelClosedByBroker as pE:
+        logger.info("channel closed by broker")   
+        channel.stop_consuming()
+        connection.close()
+        raise pE
+    except pika.exceptions.ConnectionResetError as pE:
         logger.info("channel closed by broker")   
         channel.stop_consuming()
         connection.close()
@@ -84,11 +89,11 @@ def init_connection():
         channel.stop_consuming()
         connection.close()
         raise pE
-    except KeyboardInterrupt as pE:
+    except KeyboardInterrupt as kE:
         logger.info("interactive termination")   
         channel.stop_consuming()
         connection.close()
-        raise pE
+        raise kE
     
 def main():
     logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level=settings.LOG_LEVEL)
@@ -106,8 +111,11 @@ def main():
         except pika.exceptions.ConnectionClosedByBroker:
             time.sleep(35) # wait for rabbitmq to restart (approx 30 or so seconds)
         except KeyboardInterrupt:
-            logger.exception("shutdown by user")
+            logger.info("shutdown by user")
             break
+        except pika.exceptions.ConnectionResetError as pE:
+            logger.error(f"connection reset error {pE}")
+            time.sleep(15)
 
         logger.info("exit service")
 
