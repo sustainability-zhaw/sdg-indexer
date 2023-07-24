@@ -147,7 +147,7 @@ def indexObject(body):
     try:
         Language.from_part1(info_object["language"])
     except:
-        logger.warn(f"Unknown langauge {info_object['language']}")
+        logger.warn(f"Unknown language {info_object['language']}")
         return
 
     content = " ".join([
