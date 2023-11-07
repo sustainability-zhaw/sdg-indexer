@@ -11,7 +11,9 @@ _settings = {
     "MQ_BINDKEYS": ["indexer.*", "importer.object"],
     "MQ_HEARTBEAT": 500,
     "MQ_TIMEOUT": 300,
-    "MQ_QUEUE": "indexerqueue"
+    "MQ_QUEUE": "indexerqueue",
+    "MQ_USER": os.getenv("MQ_USER", "sdg-indexer"),
+    "MQ_PASS": os.getenv("MQ_PASS", "guest")
 }
 
 if os.path.exists('/etc/app/config.json'):
@@ -32,3 +34,5 @@ MQ_BINDKEYS = _settings['MQ_BINDKEYS']
 MQ_HEARTBEAT = _settings['MQ_HEARTBEAT']
 MQ_TIMEOUT = _settings['MQ_TIMEOUT']
 MQ_QUEUE = _settings['MQ_QUEUE']
+MQ_USER = _settings['MQ_USER']
+MQ_PASS = _settings['MQ_PASS']
