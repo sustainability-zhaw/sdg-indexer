@@ -29,10 +29,12 @@ def checkNLPMatch(infoObject, keyword_item):
 
     # skip NLP Matching for invalid language markers
     if len(infoObject["language"]) > 2:
+        logger.warn(f"Excessive language String {info_object['language']}")
         return False
   
     # skip NLP Matching for unsupported languages
     if infoObject["language"] not in supportedLangs:
+        logger.warn(f"Unsupported language {info_object['language']}")
         return False
     
     keyword_fields = list(filter(
@@ -165,6 +167,16 @@ def indexObject(body):
         logger.warn(f"Unknown language {info_object['language']}")
         return
 
+    # skip NLP Matching for invalid language markers
+    if len(info_object["language"]) > 2:
+        logger.warn(f"Excessive language String {info_object['language']}")
+        return
+  
+    # skip NLP Matching for unsupported languages
+    if info_object["language"] not in supportedLangs:
+        logger.warn(f"Unsupported language {info_object['language']}")
+        return
+    
     content = " ".join([
         info_object[content_field] for content_field in ["title", "abstract", "extras"]
         if content_field in info_object and info_object[content_field] is not None
@@ -181,7 +193,6 @@ def indexObject(body):
     # for sdg_match in sdg_matches:
     #     if checkNLPMatch(info_object, sdg_match):
     #         sdg_results.append(sdg_match)
-
 
     if (len(sdg_results) > 0):
         db.update_info_object({
