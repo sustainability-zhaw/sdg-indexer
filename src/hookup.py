@@ -60,6 +60,8 @@ def checkNLPMatch(infoObject, keyword_item):
         if quoted_expression is not None:
             logger.debug(f"index with quoted expression: {quoted_expression}")
             is_match = re.search(quoted_expression, content, re.I) is not None
+
+            logger.debug(f"index with quoted expression: {quoted_expression} is {is_match}")
         else:
             logger.debug(f"index with NLP normalisation: {keyword_item[keyword_field]}")
             normalized_keyword = utils.normalize_text(keyword_item[keyword_field], keyword_item["language"])
