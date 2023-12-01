@@ -169,7 +169,7 @@ def indexObject(body):
 
     # skip NLP Matching for invalid language markers
     if len(info_object["language"]) > 2:
-        logger.warn(f"Excessive language String {info_object['language']}")
+        logger.warn(f"Excessive language string {info_object['language']}")
         return
   
     # skip NLP Matching for unsupported languages
