@@ -186,13 +186,14 @@ def indexObject(body):
     sdg_matches =  db.query_all_sdgMatch_where_keyword_contains_any_of(tokens)
 
     # the following comprehension does not deliver what it promises
-    sdg_results = [sdg_match for sdg_match in sdg_matches if checkNLPMatch(info_object, sdg_match)]
+    # sdg_results = [sdg_match for sdg_match in sdg_matches if checkNLPMatch(info_object, sdg_match)]
 
-    # sdg_results = []
+    # This delivers :)
+    sdg_results = []
 
-    # for sdg_match in sdg_matches:
-    #     if checkNLPMatch(info_object, sdg_match):
-    #         sdg_results.append(sdg_match)
+    for sdg_match in sdg_matches:
+        if checkNLPMatch(info_object, sdg_match):
+            sdg_results.append(sdg_match)
 
     if (len(sdg_results) > 0):
         db.update_info_object({
