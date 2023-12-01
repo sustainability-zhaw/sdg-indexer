@@ -8,6 +8,7 @@ import json
 
 logger = logging.getLogger("sdgindexer")
 
+supportedLangs = ["en", "de", "fr", "it"]
 
 def checkNLPMatch(infoObject, keyword_item):
     """
@@ -25,6 +26,15 @@ def checkNLPMatch(infoObject, keyword_item):
     If the query term is quoted no normalisation MUST take place, but the term 
     must exist AS IS.
     """
+
+    # skip NLP Matching for invalid language markers
+    if len(infoObject["language"]) > 2:
+        return False
+  
+    # skip NLP Matching for unsupported languages
+    if infoObject["language"] not in supportedLangs:
+        return False
+    
     keyword_fields = list(filter(
         lambda keyword_field: keyword_field[0] in keyword_item and keyword_item[keyword_field[0]] is not None,
         [ # Order affects the exclude behaviour.
