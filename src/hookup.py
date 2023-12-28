@@ -2,7 +2,6 @@ import logging
 import re
 import db
 import utils
-from iso639 import Language
 
 import json
 
@@ -161,12 +160,6 @@ def indexObject(body):
     info_object = db.query_info_object_by_link(body["link"])
 
     if not info_object:
-        return
-
-    try:
-        Language.from_part1(info_object["language"])
-    except:
-        logger.warn(f"Unknown language {info_object['language']}")
         return
 
     # skip NLP Matching for invalid language markers
