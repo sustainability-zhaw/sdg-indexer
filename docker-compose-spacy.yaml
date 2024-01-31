@@ -1,0 +1,24 @@
+# This file is used as override for 
+#     sustainability-zhaw/integration-test/docker-compose.yml
+
+services:
+  spacy-indexer: 
+    image: local-spacy-indexer
+
+    # https://docs.docker.com/compose/multiple-compose-files/merge/
+    # All paths in the files are relative to the base compose file
+    # (the first one specified).
+    build:
+      context: ../sdg-indexer
+      dockerfile: Dockerfile-spacy
+ 
+    restart: "no"
+ 
+    configs:
+      - source: sdg-indexer-config
+        target: /etc/app/config.json
+    depends_on:
+      database:
+        condition: service_healthy
+      message-queue:
+        condition: service_healthy
