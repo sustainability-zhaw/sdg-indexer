@@ -195,8 +195,8 @@ def indexObject(body):
             "update_input": {
                 "filter": { "link": { "eq": info_object["link"] } },
                 "set": { 
-                    "sdg_matches": sdg_matches,
-                    "sdgs": list([{ "id": sdg_match["sdg"]["id"] } for sdg_match in sdg_matches])
+                    "sdg_matches": sdg_results,
+                    "sdgs": list([{ "id": sdg_match["sdg"]["id"] } for sdg_match in sdg_results])
                  }
             }
         })
