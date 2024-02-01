@@ -12,6 +12,8 @@ import settings
 from gql.transport.requests import log as requests_logger
 requests_logger.setLevel(logging.WARNING)
 
+logger = logging.getLogger("db_utils")
+
 _client = Client(
     transport = RequestsHTTPTransport(url=f"http://{settings.DB_HOST}/graphql"),
     fetch_schema_from_transport=True

@@ -1,7 +1,7 @@
 import logging
 import re
 import db
-import utils
+import utils_spacy as utils
 
 import json
 
@@ -36,41 +36,7 @@ def checkNLPMatch(infoObject, keyword_item):
         logger.warn(f"Unsupported language {info_object['language']}")
         return False
     
-    keyword_fields = list(filter(
-        lambda keyword_field: keyword_field[0] in keyword_item and keyword_item[keyword_field[0]] is not None,
-        [ # Order affects the exclude behaviour.
-            ("forbidden_context", lambda found: bool(found)) , # Exclude if match
-            ("required_context", lambda found: not bool(found)), # Exclude if no match
-            ("keyword", lambda found: not bool(found)) # Exclude if no match
-        ]
-    ))
-
-    content = " ".join([
-        infoObject[content_field] for content_field in ["title", "abstract", "extras"]
-        if content_field in infoObject and infoObject[content_field] is not None
-    ])
-
-    normalized_content = utils.normalize_text(content, infoObject["language"])
-
-    for keyword_field, should_exclude_on_match in keyword_fields:
-        is_match = False
-        quoted_expression = utils.parse_quoted_expression(keyword_item[keyword_field])
-
-        if quoted_expression is not None:
-            logger.debug(f"index with quoted expression: {quoted_expression}")
-            is_match = re.search(quoted_expression, content, re.I) is not None
-
-            logger.debug(f"index with quoted expression: {quoted_expression} is {is_match}")
-        else:
-            logger.debug(f"index with NLP normalisation: {keyword_item[keyword_field]}")
-            normalized_keyword = utils.normalize_text(keyword_item[keyword_field], keyword_item["language"])
-            expression = ".*".join([re.escape(word) for word in normalized_keyword.split()])
-            is_match = re.search(expression, normalized_content, re.I) is not None
-
-        if should_exclude_on_match(is_match):
-            return False
-
-    return True
+    return utils.match(infoObject, keyword_item)
     
 def handleKeywordItem(keyword_item, links = []):
     """
@@ -84,12 +50,13 @@ def handleKeywordItem(keyword_item, links = []):
     logger.debug(f"handle one keyword item {json.dumps(keyword_item)}")
     # logger.debug(f"handle one keyword item {keyword_item['construct']}")
 
-    if keyword_item['language'] == 'en':
-        keyword_item = utils.process_sdg_match(keyword_item)
+    # if keyword_item['language'] == 'en':
+    #     keyword_item = utils.process_sdg_match(keyword_item)
 
     info_objects = db.query_keyword_matching_info_object(keyword_item, links)
 
     if len(info_objects) == 0: 
+        logger.debug(f"no protential objects for keyword item {keyword_item['construct']}")
         return
 
     logger.debug(f"found {len(info_objects)} protential objects for keyword item {keyword_item['construct']}")
@@ -171,14 +138,16 @@ def indexObject(body):
     if info_object["language"] not in supportedLangs:
         logger.warn(f"Unsupported language {info_object['language']}")
         return
-    
+
     content = " ".join([
         info_object[content_field] for content_field in ["title", "abstract", "extras"]
         if content_field in info_object and info_object[content_field] is not None
     ])
 
     tokens = utils.tokenize_text(content, info_object["language"])
-    sdg_matches =  db.query_all_sdgMatch_where_keyword_contains_any_of(tokens)
+    token_values = [token.text for token in tokens]
+
+    sdg_matches =  db.query_all_sdgMatch_where_keyword_contains_any_of(token_values)
 
     # the following comprehension does not deliver what it promises
     # sdg_results = [sdg_match for sdg_match in sdg_matches if checkNLPMatch(info_object, sdg_match)]
@@ -195,8 +164,8 @@ def indexObject(body):
             "update_input": {
                 "filter": { "link": { "eq": info_object["link"] } },
                 "set": { 
-                    "sdg_matches": sdg_matches,
-                    "sdgs": list([{ "id": sdg_match["sdg"]["id"] } for sdg_match in sdg_matches])
+                    "sdg_matches": sdg_results,
+                    "sdgs": list([{ "id": sdg_match["sdg"]["id"] } for sdg_match in sdg_results])
                  }
             }
         })
