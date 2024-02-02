@@ -98,40 +98,32 @@ def indexObject(body):
 
     if not info_object:
         return
-
-    # skip NLP Matching for invalid language markers
-    if len(info_object["language"]) > 2:
-        logger.warn(f"Excessive language string {info_object['language']}")
-        return
-  
-    # skip NLP Matching for unsupported languages
-    if info_object["language"] not in supportedLangs:
-        logger.warn(f"Unsupported language {info_object['language']}")
-        return
-
+    
     content = " ".join([
         info_object[content_field] for content_field in ["title", "abstract", "extras"]
         if content_field in info_object and info_object[content_field] is not None
     ])
 
     tokens = utils.tokenize_text(content, info_object["language"])
-    token_values = [token.text for token in tokens]
 
+    # if the language is not supported, no tokenization is performed
+    if tokens is None:
+        return
+
+    # select candidate SDG matches
     sdg_matches =  db.query_all_sdgMatch_where_keyword_contains_any_of(
-        token_values, 
+        [token.text for token in tokens], 
         info_object["language"]
     )
 
-    # the following comprehension does not deliver what it promises
-    # sdg_results = [sdg_match for sdg_match in sdg_matches if checkNLPMatch(info_object, sdg_match)]
-
-    # This delivers :)
     sdg_results = []
 
     for sdg_match in sdg_matches:
-        if utils.match(infoObject, keyword_item):
+        # because of the tokenization, this loop won't work as comprehension
+        if utils.match(info_object, sdg_match):
             sdg_results.append(sdg_match)
 
+    # only update the object if there are any matches
     if (len(sdg_results) > 0):
         db.update_info_object({
             "update_input": {
