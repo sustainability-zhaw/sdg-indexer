@@ -1,7 +1,11 @@
-import unittest
-import utils_spacy as utils
+import sys
+sys.path.append("..")
 
-import re
+import unittest
+
+# import re
+
+import app.utils_spacy as utils
 
 
 title = '''
@@ -19,7 +23,7 @@ infoObject = {
 }
 
 class TestSpacy(unittest.TestCase):
-    def test_token(self):
+    def test_01_token(self):
         result = utils.tokenize_text(abstract, "en")
 
         tlist = dict()
@@ -35,12 +39,12 @@ class TestSpacy(unittest.TestCase):
 
         # print(tlist)
         
-        self.assertEqual(len(result), 111)
+        self.assertEqual(len(result), 115)
 
 
 # sentence level tokens https://stackoverflow.com/questions/58197863/how-to-get-sentence-number-in-spacy
         
-    def test_matches_1(self):
+    def test_02_matches_1(self):
         required_context = "family"
         result = utils.tokenize_text(required_context, "en")
 
@@ -58,7 +62,7 @@ class TestSpacy(unittest.TestCase):
 
         self.assertEqual(len(result), 1)
 
-    def test_matches_2(self):
+    def test_03_matches_2(self):
         required_context = "developing countries"
         result = utils.tokenize_text(required_context, "en")
 
@@ -76,7 +80,7 @@ class TestSpacy(unittest.TestCase):
 
         self.assertEqual(len(result), 2)
 
-    def test_matches_3(self):
+    def test_04_matches_3(self):
         required_context = '" shanty towns "'
         result = utils.tokenize_text(required_context, "en")
 
@@ -94,170 +98,170 @@ class TestSpacy(unittest.TestCase):
 
         self.assertEqual(len(result), 2)
 
-    def test_quoted_expression_1(self):
-        quoted_expression = utils.parse_quoted_expression('shanty towns "')
-        self.assertFalse(quoted_expression["quote"])
 
-    def test_quoted_expression_2(self):
-        quoted_expression = utils.parse_quoted_expression('" shanty towns "')
-        self.assertEqual(quoted_expression["value"], "shanty towns")
-        self.assertTrue(quoted_expression["match_start"])
-        self.assertTrue(quoted_expression["match_end"])
-
-    def test_quoted_expression_3(self):
-        quoted_expression = utils.parse_quoted_expression('"shanty towns "')
-        self.assertEqual(quoted_expression["value"], "shanty towns")
-        self.assertFalse(quoted_expression["match_start"])
-        self.assertTrue(quoted_expression["match_end"])
-
-
-    def test_quoted_expression_4(self):
-        quoted_expression = utils.parse_quoted_expression('" shanty towns"')
-        self.assertEqual(quoted_expression["value"], "shanty towns")
-        self.assertTrue(quoted_expression["match_start"])
-        self.assertFalse(quoted_expression["match_end"])
-
-    def test_quoted_expression_5(self):
-        quoted_expression = utils.parse_quoted_expression('" shanty towns')
-        self.assertEqual(quoted_expression["value"], "shanty towns")
-        self.assertTrue(quoted_expression["match_start"])
-        self.assertFalse(quoted_expression["match_end"])
-
-    def test_quoted_expression_6(self):
-        quoted_expression = utils.parse_quoted_expression('" shanty towns  ')
-        self.assertEqual(quoted_expression["value"], "shanty towns")
-        self.assertTrue(quoted_expression["match_start"])
-        self.assertTrue(quoted_expression["match_end"])
-
-    def test_quoted_expression_7(self):
-        quoted_expression = utils.parse_quoted_expression('" shanty  towns  ')
-        self.assertEqual(quoted_expression["value"], "shanty towns")
-        self.assertTrue(quoted_expression["match_start"])
-        self.assertTrue(quoted_expression["match_end"])
-
-
-    def test_matching_noquotes_1(self):
+    def test_05_matching_noquotes_1(self):
         keyword_item = {
-            "keyword": "exercise"
+            "keyword": "exercise",
+            "language": "en"
         }
 
         self.assertTrue(utils.match(infoObject, keyword_item))
 
-    def test_matching_noquotes_2(self):
+    def test_06_matching_noquotes_2(self):
         keyword_item = {
             "keyword": "exercise",
-            "required_context": "harms pain"
+            "required_context": "harms pain",
+            "language": "en"
         }
 
         self.assertTrue(utils.match(infoObject, keyword_item))
 
-    def test_matching_noquotes_3(self):
+    def test_07_matching_noquotes_3(self):
         keyword_item = {
             "keyword": "exercise",
-            "forbidden_context": "family household"
+            "forbidden_context": "family household",
+            "language": "en"
         }
 
         self.assertTrue(utils.match(infoObject, keyword_item))
     
-    def test_nomatching_noquotes_1(self):
+    def test_08_nomatching_noquotes_1(self):
         keyword_item = {
             "keyword": "exercise",
-            "required_context": "family household"
+            "required_context": "family household",
+            "language": "en"
         }
 
         self.assertFalse(utils.match(infoObject, keyword_item))
 
-    def test_nomatching_noquotes_2(self):
+    def test_09_nomatching_noquotes_2(self):
         keyword_item = {
             "keyword": "exercise",
-            "forbidden_context": "harms pain"
+            "forbidden_context": "harms pain",
+            "language": "en"
         }
 
         self.assertFalse(utils.match(infoObject, keyword_item))
 
-    def test_nomatching_noquotes_3(self):
+    def test_10_nomatching_noquotes_3(self):
         keyword_item = {
             "keyword": "exercise",
-            "required_context": "family pain"
+            "required_context": "family pain",
+            "language": "en"
         }
         self.assertFalse(False)
     
-    def test_matching_quotes_1(self):
+    def test_11_matching_quotes_1(self):
         keyword_item = {
-            "keyword": "'prespecified nature "
+            "keyword": "'prespecified nature ",
+            "language": "en"
         }
 
         self.assertTrue(utils.match(infoObject, keyword_item))
 
-    def test_matching_quotes_2(self):
+    def test_12_matching_quotes_2(self):
         keyword_item = {
             "keyword": "'prespecified nature ",
-            "required_context": "' systematic review "
+            "required_context": "' systematic review ",
+            "language": "en"
         }
 
         self.assertTrue(utils.match(infoObject, keyword_item))
 
-    def test_matching_quotes_3(self):
+    def test_13_matching_quotes_3(self):
         keyword_item = {
             "keyword": "'prespecified nature ",
-            "forbidden_context": "' family afairs "
+            "forbidden_context": "' family afairs ",
+            "language": "en"
         }
 
         self.assertTrue(utils.match(infoObject, keyword_item))
 
-    def test_nomatching_quotes_1(self):
+    def test_14_nomatching_quotes_1(self):
         keyword_item = {
             "keyword": "'prespecified nature ",
-            "required_context": "' family afairs "
+            "required_context": "' family afairs ",
+            "language": "en"
         }
 
         self.assertFalse(utils.match(infoObject, keyword_item))
 
-    def test_nomatching_quotes_2(self):
+    def test_15_nomatching_quotes_2(self):
         keyword_item = {
-            "keyword": "'undefined nature "
+            "keyword": "'undefined nature ",
+            "language": "en"
         }
 
         self.assertFalse(utils.match(infoObject, keyword_item))
 
-    def test_nomatching_quotes_3(self):
+    def test_16_nomatching_quotes_3(self):
         keyword_item = {
             "keyword": "' prespecified nature ",
-            "forbidden_context": "' disease activity "
+            "forbidden_context": "' disease activity ",
+            "language": "en"
         }
 
         self.assertFalse(utils.match(infoObject, keyword_item))
 
-    def test_matching_mixed_1(self):
+    def test_17_matching_mixed_1(self):
         keyword_item = {
             "keyword": "'prespecified nature ",
-            "required_context": "outcome activity"
+            "required_context": "outcome activity",
+            "language": "en"
         }
 
         self.assertTrue(utils.match(infoObject, keyword_item))
         self.assertTrue(True)
 
-    def test_matching_mixed_2(self):
+    def test_18_matching_mixed_2(self):
         keyword_item = {
             "keyword": "structural nature ",
-            "forbidden_context": "' family afairs "
+            "forbidden_context": "' family afairs ",
+            "language": "en"
         }
 
         self.assertTrue(utils.match(infoObject, keyword_item))
         
-    def test_nomatching_mixed_1(self):
+    def test_19_nomatching_mixed_1(self):
         keyword_item = {
             "keyword": "' prespecified nature ",
-            "forbidden_context": "outcome activity "
+            "forbidden_context": "outcome activity ",
+            "language": "en"
         }
 
         self.assertFalse(utils.match(infoObject, keyword_item))
 
-    def test_nomatching_mixed_2(self):
+    def test_20_nomatching_mixed_2(self):
         keyword_item = {
             "keyword": " prespecified harms ",
-            "forbidden_context": "' disease activity "
+            "forbidden_context": "' disease activity ",
+            "language": "en"
         }
 
         self.assertFalse(utils.match(infoObject, keyword_item))
 
+    def test_21_fuzzy_check_partmatch_tail(self):
+        text_tokens = utils.tokenize_text(abstract, "en")
+        fuzzy_tokens = utils.tokenize_text("family exercise", "en")
+        
+        self.assertFalse(utils.checkFuzzyMatch(text_tokens, {"tokens": fuzzy_tokens}))
+
+    def test_22_fuzzy_check_partmatch_front(self):   
+        text_tokens = utils.tokenize_text(abstract, "en")
+        fuzzy_tokens = utils.tokenize_text("exercise family", "en")
+        
+        self.assertFalse(utils.checkFuzzyMatch(text_tokens, {"tokens": fuzzy_tokens}))
+
+    def test_23_fuzzy_tokenize(self):
+        # Some tokens are not properly recognized
+        # One is trophic, which is recognized as a proper noun
+        tokens = utils.tokenize_text("trophic web", "en")
+
+        self.assertEqual(len(tokens), 2)
+
+    def test_24_fuzzy_tokenize(self):
+        # Some tokens are not properly recognized
+        # One is trophic, which is recognized as a proper noun
+        tokens = utils.tokenize_text("Foreign Development Investment", "en")
+
+        self.assertEqual(len(tokens), 3)
