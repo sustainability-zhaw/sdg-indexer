@@ -1,5 +1,4 @@
 import logging
-import re
 import db
 import utils_spacy as utils
 
@@ -7,37 +6,6 @@ import json
 
 logger = logging.getLogger("sdgindexer")
 
-supportedLangs = ["en", "de", "fr", "it"]
-
-def checkNLPMatch(infoObject, keyword_item):
-    """
-    runs the position exact keyword matching using NLP normalisation. 
-    :param infoObject: an information object to check
-    :param item: a keyword to match
-    :return: boolean: True if the keyword matches for the information object, False otherwise.
-
-    The database query returns a fuzzy matching, which is a super set of the 
-    actual index terms. This function reduces this super set by narrowing the 
-    results to include only the terms in sequence. For this purpose, the tokens
-    need to be normalised to their word-stem and then the word stems must appear
-    in the order that is given in the keyword_item.
-
-    If the query term is quoted no normalisation MUST take place, but the term 
-    must exist AS IS.
-    """
-
-    # skip NLP Matching for invalid language markers
-    if len(infoObject["language"]) > 2:
-        logger.warn(f"Excessive language String {info_object['language']}")
-        return False
-  
-    # skip NLP Matching for unsupported languages
-    if infoObject["language"] not in supportedLangs:
-        logger.warn(f"Unsupported language {info_object['language']}")
-        return False
-    
-    return utils.match(infoObject, keyword_item)
-    
 def handleKeywordItem(keyword_item, links = []):
     """
     handles one key word item. 
@@ -48,6 +16,7 @@ def handleKeywordItem(keyword_item, links = []):
         links = []
 
     logger.debug(f"handle one keyword item {json.dumps(keyword_item)}")
+
     # logger.debug(f"handle one keyword item {keyword_item['construct']}")
 
     # if keyword_item['language'] == 'en':
@@ -65,16 +34,17 @@ def handleKeywordItem(keyword_item, links = []):
 
     for info_object in info_objects:
         # check each info object whether or not it actually matches
-        if checkNLPMatch(info_object, keyword_item):
-            logger.debug(f"found match for keyword item {keyword_item['construct']} in info object {info_object['link']}")
+        if utils.match(info_object, keyword_item):
+            logger.debug(
+                f"found match for keyword item {keyword_item['construct']} in info object {info_object['link']}"
+            )
             result_links.append(info_object['link'])
 
     update_input = ""
 
-    if len(result_links) > 0: 
-        construct = keyword_item['construct']
-        sdg_id = keyword_item['sdg']['id']
+    logger.debug(result_links)
 
+    if len(result_links) > 0: 
         update_input = {
             "update_input": {
                 "filter": {
@@ -84,23 +54,23 @@ def handleKeywordItem(keyword_item, links = []):
                 },
                 "set": {
                     "sdg_matches": [{
-                        "construct": construct
+                        "construct": keyword_item['construct']
                     }],
                     "sdgs": [{
-                        "id": sdg_id
+                        "id": keyword_item['sdg']['id']
                     }]
                 }
             }
         }
 
-        logger.debug(f"Updating info objects to SDG {sdg_id}: {update_input}")
+        logger.debug(f"Updating info objects to SDG {keyword_item['sdg']['id']}: {update_input}")
         db.update_info_object(update_input)
 
 def handleIndexChunk(body, keywords):
+    list = []
+
     if ('links' in body) and (body['links'] is not None):
         list = body['links']
-    else:
-        list = []
     
     for keyword_item in keywords:
         handleKeywordItem(keyword_item, list)
@@ -147,7 +117,10 @@ def indexObject(body):
     tokens = utils.tokenize_text(content, info_object["language"])
     token_values = [token.text for token in tokens]
 
-    sdg_matches =  db.query_all_sdgMatch_where_keyword_contains_any_of(token_values)
+    sdg_matches =  db.query_all_sdgMatch_where_keyword_contains_any_of(
+        token_values, 
+        info_object["language"]
+    )
 
     # the following comprehension does not deliver what it promises
     # sdg_results = [sdg_match for sdg_match in sdg_matches if checkNLPMatch(info_object, sdg_match)]
@@ -156,7 +129,7 @@ def indexObject(body):
     sdg_results = []
 
     for sdg_match in sdg_matches:
-        if checkNLPMatch(info_object, sdg_match):
+        if utils.match(infoObject, keyword_item):
             sdg_results.append(sdg_match)
 
     if (len(sdg_results) > 0):

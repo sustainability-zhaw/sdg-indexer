@@ -32,7 +32,9 @@ nlp = {
     "it": spacy.load("it_core_news_sm")
 }
 
-from iso639 import Language
+# from iso639 import Language
+
+supportedLangs = ["en", "de", "fr", "it"]
 
 # load UK vs US spelling differences
 # This should be part of the container rather than loaded from the web
@@ -111,9 +113,37 @@ def process_sdg_match(sdg_match_record):
 def match(infoObject, keyword_item):
     """
     Checks if a keyword object matches an infoobject. 
+
+    The keyword_item and the infoObject are both expected to be in the same language.
+
+    Matching is only performed if the language is supported (that is: de, en, fr, it)
+    
+    Runs the position exact keyword matching using NLP normalisation. 
+    :param infoObject: an information object to check
+    :param item: a keyword to match
+    :return: boolean: True if the keyword matches for the information object, False otherwise.
+
+    The database query returns a fuzzy matching, which is a super set of the 
+    actual index terms. This function reduces this super set by narrowing the 
+    results to include only the terms in sequence. For this purpose, the tokens
+    need to be normalised to their word-stem and then the word stems must appear
+    in the order that is given in the keyword_item.
+
+    If the query term is quoted no normalisation MUST take place, but the term 
+    must exist AS IS.
     """
+    if len(infoObject["language"]) > 2:
+        logger.warn(f"Excessive language String {info_object['language']}")
+        return False
+  
+    # skip NLP Matching for unsupported languages
+    if infoObject["language"] not in supportedLangs:
+        logger.warn(f"Unsupported language {info_object['language']}")
+        return False
+    
+
     if infoObject["language"] != keyword_item["language"]:
-        logger.debug("language mismatch")
+        logger.warn("language mismatch")
         return False
 
     content = " ".join([
@@ -132,21 +162,22 @@ def match(infoObject, keyword_item):
         "keyword": lambda found: bool(found)
     }
 
+    matching = {
+        True: checkExactMatch,
+        False: checkFuzzyMatch
+    }
+
     for keyword_field in ["keyword", "required_context", "forbidden_context"]:
         if keyword_field not in keyword_tokens:
             continue
 
-        if keyword_tokens[keyword_field]["quote"]:
-            matches = matches and verifier[keyword_field](
-                checkExactMatch(content_tokens, 
-                                keyword_tokens[keyword_field])
+        matches = matches and verifier[keyword_field](
+            matching[keyword_tokens[keyword_field]["quote"]](
+                content_tokens, 
+                keyword_tokens[keyword_field]
             )
-        else:
-            matches = matches and verifier[keyword_field](
-                checkFuzzyMatch(content_tokens, 
-                                keyword_tokens[keyword_field])
-            )
-
+        )
+        
     return matches
 
 def parse_keyword_item(keyword_item, lang_code):
@@ -252,13 +283,15 @@ def tokenize_text(text, lang_code, mode = False):
     # - numbers
     # - symbols
     # - spaces
+    # 
+    # Following tokens are not stripped:
     # - all capital words
     # - proper names (PROPN)
-    return [token for token in doc if not token.is_stop 
-                                      and not token.is_punct 
-                                      and token.pos_ != "NUM" 
-                                      and token.pos_ != "SYM" 
-                                      and token.pos_ != "NUM"  
-                                      and token.pos_ != "PROPN" 
-                                      and not token.is_space 
-                                      and not re.match(r"^X+x?$", token.shape_)]
+    return [token for token in doc if not token.is_punct 
+                                      and token.pos_ != "NUM"
+                                      and token.pos_ != "SYM"
+                                      and token.pos_ != "NUM"
+                                      # and token.pos_ != "PROPN"
+                                      and not token.is_stop
+                                      # and not re.match(r"^X+x?$", token.shape_)
+                                      and not token.is_space]
