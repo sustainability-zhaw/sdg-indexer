@@ -3,7 +3,7 @@ import re
 # import string
 import logging
 
-import pandas as pd
+# import pandas as pd
 
 # set up spaCy
 import spacy
