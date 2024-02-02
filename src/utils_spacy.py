@@ -1,6 +1,6 @@
 # import modules
 import re
-import string
+# import string
 import logging
 
 import pandas as pd
@@ -242,21 +242,24 @@ def parse_quoted_expression(expression: str):
     return retval
 
 def checkFuzzyMatch(texttokens, keyword):
-    textTokens = [token.lemma_ for token in texttokens]
+    texttokens = clean_fuzzy_tokens(texttokens)
+
+    texttokens = [token.lemma_ for token in texttokens]
     keywordTokens = [token.lemma_ for token in keyword["tokens"]]
 
     retval = True
 
     for keywordToken in keywordTokens:
-        retval = retval and (keywordToken in textTokens)
+        retval = retval and (keywordToken in texttokens)
 
     return retval
 
 def checkExactMatch(texttokens, keyword):
+    object_rawtext = " ".join([token.text for token in texttokens])
     object_text = " ".join([token.lemma_ for token in texttokens])
-    keyword_text = " ".join([token.lemma_ for token in keyword["tokens"]])
 
-    rawkeyword = keyword["value"]
+    keyword_text = " ".join([token.lemma_ for token in keyword["tokens"]])
+    rawkeyword = " ".join([token.text for token in keyword["tokens"]])
 
     if keyword["match_start"]:
         keyword_text = r"\b" + keyword_text
@@ -266,6 +269,9 @@ def checkExactMatch(texttokens, keyword):
         keyword_text = keyword_text + r"\b"
         rawkeyword = rawkeyword + r"\b"
 
+    if re.search(rawkeyword, object_rawtext, re.I) is not None:
+        return True
+    
     if re.search(rawkeyword, object_text, re.I) is not None:
         return True
     
@@ -277,21 +283,27 @@ def tokenize_text(text, lang_code, mode = False):
     
     doc = nlp[lang_code](text)
 
-    # strip words with little information for the sdg indexing. 
-    # - stop words
+    # strip structures with little information for the sdg indexing. 
     # - punctuation
-    # - numbers
     # - symbols
     # - spaces
-    # 
-    # Following tokens are not stripped:
-    # - all capital words
-    # - proper names (PROPN)
+    
     return [token for token in doc if not token.is_punct 
-                                      and token.pos_ != "NUM"
                                       and token.pos_ != "SYM"
-                                      and token.pos_ != "NUM"
+                                      # and token.pos_ != "NUM"
                                       # and token.pos_ != "PROPN"
-                                      and not token.is_stop
+                                      # and not token.is_stop
                                       # and not re.match(r"^X+x?$", token.shape_)
                                       and not token.is_space]
+
+def clean_fuzzy_tokens(tokens):
+    """ 
+    Cleans up the tokens for fuzzy matching.
+
+    This function removes all tokens that are not relevant for the fuzzy matching.
+    Namely, it removes:
+    - numbers
+    - stop words
+    """
+    return [token for token in tokens if not token.is_stop
+                                         and token.pos_ != "NUM"]
