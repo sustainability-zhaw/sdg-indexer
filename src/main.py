@@ -8,6 +8,7 @@ import pika
 import settings
 import hookup
 import time
+import db
 
 logger = logging.getLogger("sdgindexer-loop")
 
@@ -87,9 +88,10 @@ def main():
     logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level=settings.LOG_LEVEL)
 
     logging.getLogger("pika").setLevel(logging.WARNING)
-        
-    logger.info(f"init message queue connection to host '{settings.MQ_HOST}'")
+    
+    db.init_client(settings)
 
+    logger.info(f"init message queue connection to host '{settings.MQ_HOST}'")
     
     while True:
         try:
