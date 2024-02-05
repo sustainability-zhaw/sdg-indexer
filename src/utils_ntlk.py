@@ -1,3 +1,8 @@
+# IMPORTANT NOTICE 
+# This file is kept for historical reasons and is not used nor intended to be 
+# used in the current version of the project.
+#
+
 # import modules
 import re
 import string
