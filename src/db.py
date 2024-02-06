@@ -1,21 +1,29 @@
-# -*- coding: utf-8 -*-
-
 # import modules
 import logging
-import re
+# import re
 
 from gql import Client, gql
 from gql.transport.requests import RequestsHTTPTransport
-import settings
 
 # helper 
 from gql.transport.requests import log as requests_logger
 requests_logger.setLevel(logging.WARNING)
 
-_client = Client(
-    transport = RequestsHTTPTransport(url=f"http://{settings.DB_HOST}/graphql"),
-    fetch_schema_from_transport=True
-)
+logger = logging.getLogger("db_utils")
+
+_client = None
+
+def init_client(settings):
+    global _client
+    _client = Client(
+        transport = RequestsHTTPTransport(url=f"http://{settings.DB_HOST}/graphql"),
+        fetch_schema_from_transport=True
+    )
+
+# _client = Client(
+#     transport = RequestsHTTPTransport(url=f"http://{settings.DB_HOST}/graphql"),
+#     fetch_schema_from_transport=True
+# )
 
 def query_sdg_keywords(sdg): 
     return _client.execute(
@@ -160,7 +168,7 @@ def query_info_object_by_link(link):
         variable_values={ "link": link }
     )["getInfoObject"]
 
-def query_all_sdgMatch_where_keyword_contains_any_of(tokens):
+def query_all_sdgMatch_where_keyword_contains_any_of(tokens, lang = "en"):
     return _client.execute(
         gql(
             """
@@ -178,11 +186,18 @@ def query_all_sdgMatch_where_keyword_contains_any_of(tokens):
             }
             """
         ),
-        variable_values={
+        variable_values = {
             "filter": {
-                "keyword": {
-                    "anyofterms": " ".join(tokens)
-                }
+                "and": [
+                    {
+                        "language": { "eq": lang }
+                    },
+                    { 
+                        "keyword": {
+                            "anyofterms": " ".join(tokens)
+                        }
+                    }
+                ]
             }
         }
     )["querySdgMatch"]

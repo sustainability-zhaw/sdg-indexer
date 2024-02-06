@@ -1,77 +1,11 @@
 import logging
-import re
 import db
-import utils
+import utils_spacy as utils
 
 import json
 
 logger = logging.getLogger("sdgindexer")
 
-supportedLangs = ["en", "de", "fr", "it"]
-
-def checkNLPMatch(infoObject, keyword_item):
-    """
-    runs the position exact keyword matching using NLP normalisation. 
-    :param infoObject: an information object to check
-    :param item: a keyword to match
-    :return: boolean: True if the keyword matches for the information object, False otherwise.
-
-    The database query returns a fuzzy matching, which is a super set of the 
-    actual index terms. This function reduces this super set by narrowing the 
-    results to include only the terms in sequence. For this purpose, the tokens
-    need to be normalised to their word-stem and then the word stems must appear
-    in the order that is given in the keyword_item.
-
-    If the query term is quoted no normalisation MUST take place, but the term 
-    must exist AS IS.
-    """
-
-    # skip NLP Matching for invalid language markers
-    if len(infoObject["language"]) > 2:
-        logger.warn(f"Excessive language String {info_object['language']}")
-        return False
-  
-    # skip NLP Matching for unsupported languages
-    if infoObject["language"] not in supportedLangs:
-        logger.warn(f"Unsupported language {info_object['language']}")
-        return False
-    
-    keyword_fields = list(filter(
-        lambda keyword_field: keyword_field[0] in keyword_item and keyword_item[keyword_field[0]] is not None,
-        [ # Order affects the exclude behaviour.
-            ("forbidden_context", lambda found: bool(found)) , # Exclude if match
-            ("required_context", lambda found: not bool(found)), # Exclude if no match
-            ("keyword", lambda found: not bool(found)) # Exclude if no match
-        ]
-    ))
-
-    content = " ".join([
-        infoObject[content_field] for content_field in ["title", "abstract", "extras"]
-        if content_field in infoObject and infoObject[content_field] is not None
-    ])
-
-    normalized_content = utils.normalize_text(content, infoObject["language"])
-
-    for keyword_field, should_exclude_on_match in keyword_fields:
-        is_match = False
-        quoted_expression = utils.parse_quoted_expression(keyword_item[keyword_field])
-
-        if quoted_expression is not None:
-            logger.debug(f"index with quoted expression: {quoted_expression}")
-            is_match = re.search(quoted_expression, content, re.I) is not None
-
-            logger.debug(f"index with quoted expression: {quoted_expression} is {is_match}")
-        else:
-            logger.debug(f"index with NLP normalisation: {keyword_item[keyword_field]}")
-            normalized_keyword = utils.normalize_text(keyword_item[keyword_field], keyword_item["language"])
-            expression = ".*".join([re.escape(word) for word in normalized_keyword.split()])
-            is_match = re.search(expression, normalized_content, re.I) is not None
-
-        if should_exclude_on_match(is_match):
-            return False
-
-    return True
-    
 def handleKeywordItem(keyword_item, links = []):
     """
     handles one key word item. 
@@ -82,14 +16,16 @@ def handleKeywordItem(keyword_item, links = []):
         links = []
 
     logger.debug(f"handle one keyword item {json.dumps(keyword_item)}")
+
     # logger.debug(f"handle one keyword item {keyword_item['construct']}")
 
-    if keyword_item['language'] == 'en':
-        keyword_item = utils.process_sdg_match(keyword_item)
+    # if keyword_item['language'] == 'en':
+    #     keyword_item = utils.process_sdg_match(keyword_item)
 
     info_objects = db.query_keyword_matching_info_object(keyword_item, links)
 
     if len(info_objects) == 0: 
+        logger.debug(f"no protential objects for keyword item {keyword_item['construct']}")
         return
 
     logger.debug(f"found {len(info_objects)} protential objects for keyword item {keyword_item['construct']}")
@@ -98,16 +34,17 @@ def handleKeywordItem(keyword_item, links = []):
 
     for info_object in info_objects:
         # check each info object whether or not it actually matches
-        if checkNLPMatch(info_object, keyword_item):
-            logger.debug(f"found match for keyword item {keyword_item['construct']} in info object {info_object['link']}")
+        if utils.match(info_object, keyword_item):
+            logger.debug(
+                f"found match for keyword item {keyword_item['construct']} in info object {info_object['link']}"
+            )
             result_links.append(info_object['link'])
 
     update_input = ""
 
-    if len(result_links) > 0: 
-        construct = keyword_item['construct']
-        sdg_id = keyword_item['sdg']['id']
+    logger.debug(result_links)
 
+    if len(result_links) > 0: 
         update_input = {
             "update_input": {
                 "filter": {
@@ -117,23 +54,23 @@ def handleKeywordItem(keyword_item, links = []):
                 },
                 "set": {
                     "sdg_matches": [{
-                        "construct": construct
+                        "construct": keyword_item['construct']
                     }],
                     "sdgs": [{
-                        "id": sdg_id
+                        "id": keyword_item['sdg']['id']
                     }]
                 }
             }
         }
 
-        logger.debug(f"Updating info objects to SDG {sdg_id}: {update_input}")
+        logger.debug(f"Updating info objects to SDG {keyword_item['sdg']['id']}: {update_input}")
         db.update_info_object(update_input)
 
 def handleIndexChunk(body, keywords):
+    list = []
+
     if ('links' in body) and (body['links'] is not None):
         list = body['links']
-    else:
-        list = []
     
     for keyword_item in keywords:
         handleKeywordItem(keyword_item, list)
@@ -161,16 +98,6 @@ def indexObject(body):
 
     if not info_object:
         return
-
-    # skip NLP Matching for invalid language markers
-    if len(info_object["language"]) > 2:
-        logger.warn(f"Excessive language string {info_object['language']}")
-        return
-  
-    # skip NLP Matching for unsupported languages
-    if info_object["language"] not in supportedLangs:
-        logger.warn(f"Unsupported language {info_object['language']}")
-        return
     
     content = " ".join([
         info_object[content_field] for content_field in ["title", "abstract", "extras"]
@@ -178,18 +105,25 @@ def indexObject(body):
     ])
 
     tokens = utils.tokenize_text(content, info_object["language"])
-    sdg_matches =  db.query_all_sdgMatch_where_keyword_contains_any_of(tokens)
 
-    # the following comprehension does not deliver what it promises
-    # sdg_results = [sdg_match for sdg_match in sdg_matches if checkNLPMatch(info_object, sdg_match)]
+    # if the language is not supported, no tokenization is performed
+    if tokens is None:
+        return
 
-    # This delivers :)
+    # select candidate SDG matches
+    sdg_matches =  db.query_all_sdgMatch_where_keyword_contains_any_of(
+        [token.text for token in tokens], 
+        info_object["language"]
+    )
+
     sdg_results = []
 
     for sdg_match in sdg_matches:
-        if checkNLPMatch(info_object, sdg_match):
+        # because of the tokenization, this loop won't work as comprehension
+        if utils.match(info_object, sdg_match):
             sdg_results.append(sdg_match)
 
+    # only update the object if there are any matches
     if (len(sdg_results) > 0):
         db.update_info_object({
             "update_input": {

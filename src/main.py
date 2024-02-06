@@ -8,6 +8,7 @@ import pika
 import settings
 import hookup
 import time
+import db
 
 logger = logging.getLogger("sdgindexer-loop")
 
@@ -87,9 +88,10 @@ def main():
     logging.basicConfig(format="%(levelname)s: %(name)s: %(asctime)s: %(message)s", level=settings.LOG_LEVEL)
 
     logging.getLogger("pika").setLevel(logging.WARNING)
-        
-    logger.info(f"init message queue connection to host '{settings.MQ_HOST}'")
+    
+    db.init_client(settings)
 
+    logger.info(f"init message queue connection to host '{settings.MQ_HOST}'")
     
     while True:
         try:
@@ -97,11 +99,11 @@ def main():
         except pika.exceptions.StreamLostError as sE:
             logger.error(f"stream lost error {sE}")
             # reconnect right away
-        except pika.exceptions.ChannelClosedByBroker:
+        except pika.exceptions.ChannelClosedByBroker as pE:
             logger.error(f"channel close error {pE}")
             time.sleep(15) # wait for rabbitmq or docker to resettle
-        except pika.exceptions.ConnectionClosedByBroker:
-            logger.error(f"connection close error {pE}")
+        except pika.exceptions.ConnectionClosedByBroker as cE:
+            logger.error(f"connection close error {cE}")
             time.sleep(35) # wait for rabbitmq to restart (approx 30 or so seconds)
         except KeyboardInterrupt:
             logger.info("shutdown by user")
