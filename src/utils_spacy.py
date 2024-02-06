@@ -65,49 +65,49 @@ supportedLangs = ["en", "de", "fr", "it"]
 #         counterpart = None
 #     return counterpart
 
-def process_sdg_match(sdg_match_record):
-    """
-    processes English phrases/keywords one by one (space separated), while keeping the phrase structure (comma separated)
-    :param sdg_match_record: this is sdg_match object (record) from the database
-    :return: sdg_match that contains both versions of english US and UK
-    """
-    sdg_match_record_updated = sdg_match_record.copy()
-    for field in sdg_match_record.keys():
-        if field in ['keyword', 'required_context', 'forbidden_context']:
+# def process_sdg_match(sdg_match_record):
+#     """
+#     processes English phrases/keywords one by one (space separated), while keeping the phrase structure (comma separated)
+#     :param sdg_match_record: this is sdg_match object (record) from the database
+#     :return: sdg_match that contains both versions of english US and UK
+#     """
+#     sdg_match_record_updated = sdg_match_record.copy()
+#     for field in sdg_match_record.keys():
+#         if field in ['keyword', 'required_context', 'forbidden_context']:
 
-            if sdg_match_record[field] is None: 
-                continue
+#             if sdg_match_record[field] is None: 
+#                 continue
 
-            # handle quoted expressions correctly
-            if re.search(r"^['\"]", sdg_match_record[field]) is not None:
-                sdg_match_record_updated[field] = sdg_match_record[field]
-                continue
+#             # handle quoted expressions correctly
+#             if re.search(r"^['\"]", sdg_match_record[field]) is not None:
+#                 sdg_match_record_updated[field] = sdg_match_record[field]
+#                 continue
 
-            phrases = re.split(r"[^\w\d]+", sdg_match_record[field])  # process comma separated phrases
-            final_phrases = []
+#             phrases = re.split(r"[^\w\d]+", sdg_match_record[field])  # process comma separated phrases
+#             final_phrases = []
 
-            for phrase in phrases:
-                phrase = phrase.strip()
-                items = phrase.split()
-                counterparts = []
+#             for phrase in phrases:
+#                 phrase = phrase.strip()
+#                 items = phrase.split()
+#                 counterparts = []
 
-                for item in items:
-                    counterpart = check_us_and_uk_spelling(item)
-                    if counterpart is not None:
-                        counterparts.append(counterpart)
+#                 for item in items:
+#                     counterpart = check_us_and_uk_spelling(item)
+#                     if counterpart is not None:
+#                         counterparts.append(counterpart)
 
-                    else:
-                        counterparts.append(item)
-                counterparts = " ".join(map(str, counterparts))
+#                     else:
+#                         counterparts.append(item)
+#                 counterparts = " ".join(map(str, counterparts))
 
-                if phrase == counterparts:
-                    final_phrases.append(phrase)
-                else:
-                    final_phrases.append(phrase)
-                    final_phrases.append(counterparts)
+#                 if phrase == counterparts:
+#                     final_phrases.append(phrase)
+#                 else:
+#                     final_phrases.append(phrase)
+#                     final_phrases.append(counterparts)
 
-            sdg_match_record_updated[field] = ' '.join(final_phrases)
-    return sdg_match_record_updated
+#             sdg_match_record_updated[field] = ' '.join(final_phrases)
+#     return sdg_match_record_updated
 
 
 def match(infoObject, keyword_item):
@@ -121,7 +121,8 @@ def match(infoObject, keyword_item):
     Runs the position exact keyword matching using NLP normalisation. 
     :param infoObject: an information object to check
     :param item: a keyword to match
-    :return: boolean: True if the keyword matches for the information object, False otherwise.
+    :return: boolean: True if the keyword matches for the information object, 
+                      False otherwise.
 
     The database query returns a fuzzy matching, which is a super set of the 
     actual index terms. This function reduces this super set by narrowing the 
@@ -133,22 +134,26 @@ def match(infoObject, keyword_item):
     must exist AS IS.
     """
     if len(infoObject["language"]) > 2:
-        logger.warn(f"Excessive language String {info_object['language']}")
+        # this is not strictly needed, but provides more expressive logs
+        logger.warn(f"Excessive language String {infoObject['language']}")
         return False
   
     # skip NLP Matching for unsupported languages
     if infoObject["language"] not in supportedLangs:
-        logger.warn(f"Unsupported language {info_object['language']}")
+        logger.warn(f"Unsupported language {infoObject['language']}")
         return False
     
-
+    # sanity check for language mismatch, this should never happen if the DB is
+    #  correctly queried
     if infoObject["language"] != keyword_item["language"]:
         logger.warn("language mismatch")
         return False
 
     content = " ".join([
-        infoObject[content_field] for content_field in ["title", "abstract", "extras"]
-        if content_field in infoObject and infoObject[content_field] is not None
+        infoObject[content_field] 
+        for content_field in ["title", "abstract", "extras"]
+        if content_field in infoObject and 
+           infoObject[content_field] is not None
     ])
 
     content_tokens = tokenize_text(content, infoObject["language"])
@@ -162,23 +167,23 @@ def match(infoObject, keyword_item):
         "keyword": lambda found: bool(found)
     }
 
-    matching = {
-        True: checkExactMatch,
-        False: checkFuzzyMatch
-    }
-
     for keyword_field in ["keyword", "required_context", "forbidden_context"]:
         if keyword_field not in keyword_tokens:
             continue
 
-        matches = matches and verifier[keyword_field](
-            matching[keyword_tokens[keyword_field]["quote"]](
-                content_tokens, 
-                keyword_tokens[keyword_field]
-            )
-        )
+        # always check for an exact match
+        match = checkExactMatch(content_tokens, keyword_tokens[keyword_field])
+
+        # if no exact match is found for unquoted terms, run the fuzzy match
+        if not (match or keyword_tokens[keyword_field]["quote"]):
+            logger.debug(f"check for fuzzy match for {keyword_field}: {keyword_tokens[keyword_field]}")
+            match = checkFuzzyMatch(content_tokens, keyword_tokens[keyword_field])
         
-    return matches
+        # stop immediately if any part of the condition fails
+        if not verifier[keyword_field](match):
+            return False
+
+    return True
 
 def parse_keyword_item(keyword_item, lang_code):
     """
