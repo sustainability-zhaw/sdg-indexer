@@ -91,7 +91,7 @@ def indexTerm(body):
 
 def indexObject(body):
     """
-    Function to handle reindexing of a given object whenever an importer reports a single new object.
+    Function to handle (re)indexing of a given object whenever an importer reports a single new object.
     The body contains the link to the infoObject in the database.
     """
     info_object = db.query_info_object_by_link(body["link"])
