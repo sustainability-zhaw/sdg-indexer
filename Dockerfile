@@ -1,4 +1,4 @@
-FROM python:3.12.1-slim-bookworm
+FROM python:3.13.4-slim-bookworm
 
 ENV BATCH_INTERVAL=180
 ENV BATCH_SIZE=100

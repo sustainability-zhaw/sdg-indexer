@@ -69,3 +69,7 @@ docker compose -f docker-compose-local.yaml up --build --force-recreate --remove
 ```
 
 The launch takes approx. 30 seconds. After that period an initialised dgraph database is exposed via `localhost:8080`.
+
+## Building 
+
+docker build -t testing .
